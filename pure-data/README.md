@@ -43,22 +43,30 @@
 
 ---
 
-## 🗂️ EPIC 3: Redarea Audio de Înaltă Fidelitate (Sintetizator Extern)
-*Obiectiv: Generarea unui sunet profesional folosind un proces extern de FluidSynth pe PC, eliminând necesitatea procesării audio interne în PlugData.*
+## 🗂️ EPIC 3: Redarea Audio și Înregistrarea MIDI
+*Obiectiv: Generarea sunetului și salvarea rezultatului procesat direct din Pure Data.*
 
 - [x] **Task 3.1: Pregătirea portului MIDI de ieșire**
-  - Implementarea obiectului `[noteout]` pentru a trimite notele procesate către secvențiatorul ALSA.
-- [x] **Task 3.2: Configurarea rutării ALSA**
-  - Utilizarea utilitarului `aconnect` pentru a stabili legătura între Pure Data și FluidSynth.
-  - Comandă recomandată: `aconnect "Pure Data":0 "FLUID Synth":0`
-- [x] **Task 3.3: Rutarea semnalului MIDI prelucrat**
-  - Transmiterea valorilor de Pitch (modificat) și Velocity direct în `[noteout]`.
-- [x] **Task 3.4: Optimizarea latenței**
-  - Prin rutarea directă ALSA (Zero Latency), semnalul ajunge instantaneu la motorul audio extern.
+  - Implementarea obiectului `[noteout]` pentru a trimite notele procesate către sistem.
+- [x] **Task 3.2: Înregistrarea datelor procesate**
+  - Integrarea unui al doilea obiect `[seq]` dedicat înregistrării.
+  - Utilizarea `[pack f f f]` pentru a împacheta *Pitch* (modificat), *Velocity* și *Channel*.
+- [x] **Task 3.3: Controlul înregistrării (Recorder UI)**
+  - Adăugarea butoanelor pentru `Record`, `Stop` și `Save`.
+  - Salvarea automată sub numele `spiegel_modificat.mid`.
 
 ---
 
 ## 🗂️ EPIC 4: Vizualizarea Datelor și Interfața Grafică (GUI)
+...
+---
+
+## 🗂️ EPIC 5: Exportul WAV (Offline Rendering)
+*Obiectiv: Conversia fișierului MIDI procesat într-un format audio de înaltă calitate.*
+
+- [x] **Task 5.1: Utilizarea FluidSynth pentru render offline**
+  - Comanda de export: `make export-wav`
+  - Această metodă este mult mai rapidă și mai sigură decât înregistrarea live a plăcii de sunet.
 *Obiectiv: Monitorizarea în timp real a datelor procesate și crearea unui Dashboard interactiv curat utilizând arhitectura Graph-on-Parent.*
 
 - [x] **Task 4.1: Monitorizarea live a claviaturii**

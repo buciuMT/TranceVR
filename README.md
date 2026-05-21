@@ -6,7 +6,7 @@ Procedural Audio Visualizer in VR using Pure Data for audio analysis/processing 
 
 To export the piece with high-quality SoundFonts and cathedral reverb:
 
-1. **Start FluidSynth:**
+1. **Start FluidSynth (for monitoring):**
    ```bash
    make run-synth
    ```
@@ -14,16 +14,15 @@ To export the piece with high-quality SoundFonts and cathedral reverb:
    ```bash
    make bridge-midi
    ```
-3. **Start Recording (in a new tab):**
+3. **Record in Pure Data:**
+   - Press **Record** (butonul nou adăugat în patch).
+   - Press **Play** pe transportul principal.
+   - Când piesa se termină, apasă **Stop** și apoi **Save**.
+4. **Export final WAV:**
    ```bash
-   make record-start
+   make export-wav
    ```
-4. **Play in PlugData:**
-   - Select the psaltic scale.
-   - Press **Play**.
-5. **Stop Recording:**
-   - When finished, press `Ctrl+C` in the recording terminal.
-   - The result will be saved as `spiegel_sgm_final.wav`.
+   Fișierul rezultat va fi `spiegel_sgm_final.wav`.
 
 ## Project Structure
 ...
