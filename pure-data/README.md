@@ -44,35 +44,31 @@
 ---
 
 ## 🗂️ EPIC 3: Redarea Audio de Înaltă Fidelitate (Sintetizator Extern)
-*Obiectiv: Generarea unui sunet profesional folosind o librărie de eșantioane reale (SoundFont), scutind necesitatea unui motor DSP complex de sinteză aditivă.*
+*Obiectiv: Generarea unui sunet profesional folosind un proces extern de FluidSynth pe PC, eliminând necesitatea procesării audio interne în PlugData.*
 
-- [ ] **Task 3.1: Integrarea motorului FluidSynth**
-  - Crearea obiectului `[fluid~]` în spațiul de lucru.
-- [ ] **Task 3.2: Încărcarea resurselor sonore**
-  - Obținerea unui fișier `.sf2` de înaltă calitate (Pian, Cor sau Orgă).
-  - Crearea unui mesaj de inițializare `[load nume_instrument.sf2]` conectat la `[fluid~]` pentru a încărca eșantioanele direct în RAM.
-- [ ] **Task 3.3: Rutarea semnalului MIDI către sintetizator**
-  - Împachetarea notelor modificate (Pitch) și a volumului (Velocity) și trimiterea lor direct în intrarea MIDI a obiectului `[fluid~]`.
-- [ ] **Task 3.4: Finisarea și conversia semnalului (DAC)**
-  - Adăugarea unui control general de volum (Master Gain) multiplicând semnalul de ieșire `[*~ 0.8]`.
-  - Rutarea ieșirii stereo stânga/dreapta către convertorul digital-analogic al sistemului folosind `[dac~]`.
+- [x] **Task 3.1: Pregătirea portului MIDI de ieșire**
+  - Implementarea obiectului `[noteout]` pentru a trimite notele procesate către secvențiatorul ALSA.
+- [x] **Task 3.2: Configurarea rutării ALSA**
+  - Utilizarea utilitarului `aconnect` pentru a stabili legătura între Pure Data și FluidSynth.
+  - Comandă recomandată: `aconnect "Pure Data":0 "FLUID Synth":0`
+- [x] **Task 3.3: Rutarea semnalului MIDI prelucrat**
+  - Transmiterea valorilor de Pitch (modificat) și Velocity direct în `[noteout]`.
+- [x] **Task 3.4: Optimizarea latenței**
+  - Prin rutarea directă ALSA (Zero Latency), semnalul ajunge instantaneu la motorul audio extern.
 
 ---
 
 ## 🗂️ EPIC 4: Vizualizarea Datelor și Interfața Grafică (GUI)
-*Obiectiv: Extragerea metricilor din semnalul audio și crearea unui Dashboard interactiv curat utilizând arhitectura Graph-on-Parent.*
+*Obiectiv: Monitorizarea în timp real a datelor procesate și crearea unui Dashboard interactiv curat utilizând arhitectura Graph-on-Parent.*
 
-- [ ] **Task 4.1: Construirea Osciloscopului (Waveform Visualizer)**
-  - Declararea zonei de memorie grafică pentru desenare: `[table vizualizare_unda 512]`.
-  - Rutarea semnalului audio (Audio Rate) din `[fluid~]` prin `[tabwrite~ vizualizare_unda]`.
-  - Crearea ciclului de actualizare grafică folosind un metronom `[metro 30]` (aprox. 30 FPS) legat la `[tabwrite~]`.
-- [ ] **Task 4.2: Construirea Monitorului de Nivel (VU Meter)**
-  - Extragerea amplitudinii din semnalul L/R utilizând 2 obiecte Envelope Follower `[env~]`.
-  - Conectarea ieșirilor RMS (Control Rate) la două obiecte grafice de tip `[vu]` pentru monitorizarea decibelilor în timp real.
-- [ ] **Task 4.3: Monitorizarea live a claviaturii**
+- [x] **Task 4.1: Monitorizarea live a claviaturii**
   - Adăugarea obiectului `[kslider]` (claviatură virtuală).
   - Trimiterea semnalului de Pitch modificat direct în claviatură pentru a oferi un feedback vizual al alterațiilor aplicate notelor.
-- [ ] **Task 4.4: Încapsularea Interfeței (Graph-on-Parent)**
-  - Plasarea întregii logici matematice, a cablurilor și a nodurilor într-un sub-patch separat (ex: `[pd Motor_Audio_Psaltic]`).
+- [x] **Task 4.2: Visualizer de clasă de notă (Pitch Class)**
+  - Crearea unei matrice vizuale sau a unui indicator numeric (0-11) care să arate în timp real ce clasă de notă este procesată de LUT.
+- [x] **Task 4.3: Monitorizarea fluxului MIDI (Note Activity)**
+  - Implementarea unui indicator grafic (bang sau toggle) care se activează la fiecare eveniment Note On.
+- [x] **Task 4.4: Încapsularea Interfeței (Graph-on-Parent)**
+  - Plasarea întregii logici matematice și a cablurilor într-un sub-patch separat (ex: `[pd Motor_Psaltic]`).
   - Activarea opțiunii *Graph-on-Parent* în setările sub-patch-ului.
-  - Expunerea pe interfața curată strict a elementelor de control (`Play`, `Load MIDI`, Radio Butoane) și a metricilor vizuale (`Osciloscop`, `VU Meter`, `kslider`), transformând proiectul într-o aplicație software finisată.
+  - Expunerea pe interfața curată strict a elementelor de control (`Play`, `Load MIDI`, Radio Butoane) și a monitorizării vizuale (`kslider`, `Pitch Class`), transformând proiectul într-o aplicație software finisată.
