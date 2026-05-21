@@ -10,15 +10,15 @@
 ## 🗂️ EPIC 1: Citirea Datelor și Rutarea (MIDI I/O)
 *Obiectiv: Extragerea și parsarea instrucțiunilor dintr-un fișier MIDI preexistent.*
 
-- [ ] **Task 1.1: Integrarea motorului de secvențiere**
+- [x] **Task 1.1: Integrarea motorului de secvențiere**
   - Utilizarea obiectului `[seq]` (din librăria Cyclone) pentru citirea și redarea fișierelor `.mid`.
-- [ ] **Task 1.2: Construirea panoului de control redare (Transport)**
-  - Adăugarea unui buton `[openpanel]` conectat la un mesaj `read $1` pentru a permite utilizatorului să selecteze fișierul MIDI din sistemul de operare.
+- [x] **Task 1.2: Construirea panoului de control redare (Transport)**
+  - Adăugarea unui buton `[openpanel]` conectat la un obiect `[prepend read]` (din Cyclone) pentru a permite utilizatorului să selecteze fișierul MIDI din sistemul de operare, asigurând suport pentru căi de fișiere ce conțin spații.
   - Crearea butoanelor de control: `Play`, `Stop`, `Pause` și a unui `[toggle]` pentru a indica starea de rulare.
-- [ ] **Task 1.3: Parsarea fluxului de date**
+- [x] **Task 1.3: Parsarea fluxului de date**
   - Extragerea valorilor brute prin conectarea ieșirii lui `[seq]`.
   - Separarea datelor în canale de *Pitch* (înălțime notă) și *Velocity* (volumul apăsării).
-- [ ] **Task 1.4: Filtrarea stărilor (Note On/Off)**
+- [x] **Task 1.4: Filtrarea stărilor (Note On/Off)**
   - Implementarea unui filtru `[moses 1]` pe ramura de Velocity pentru a separa evenimentele de oprire (Velocity = 0) de cele de apăsare (Velocity > 0).
 
 ---
@@ -26,15 +26,15 @@
 ## 🗂️ EPIC 2: Procesorul Matematic (LUT-ul Cromatic)
 *Obiectiv: Alterarea instantanee a notelor folosind o structură de date de tip matrice (Lookup Table), asigurând o complexitate de timp $O(1)$.*
 
-- [ ] **Task 2.1: Alocarea memoriei pentru structura de date**
+- [x] **Task 2.1: Alocarea memoriei pentru structura de date**
   - Declararea tabelului de offset-uri: `[table array_scara 12]`.
-- [ ] **Task 2.2: Implementarea algoritmului de indexare**
+- [x] **Task 2.2: Implementarea algoritmului de indexare**
   - Preluarea notei de intrare (Pitch), procesarea prin operatorul modulo `[% 12]` pentru a obține clasa notei.
   - Trimiterea indexului rezultat către obiectul de citire `[tabread array_scara]`.
-- [ ] **Task 2.3: Recompunerea semnalului MIDI**
+- [x] **Task 2.3: Recompunerea semnalului MIDI**
   - Însumarea valorii offset-ului extras din tabel cu valoarea notei originale utilizând `[+]`.
   - Reatașarea valorii de *Velocity* originale la noua notă calculată.
-- [ ] **Task 2.4: Dezvoltarea Selectorului Dinamic de Scări (State Management)**
+- [x] **Task 2.4: Dezvoltarea Selectorului Dinamic de Scări (State Management)**
   - Crearea unui meniu UI `[radio]` cu 3 opțiuni, conectat la un `[select 0 1 2]`.
   - Definirea mesajelor de suprascriere a memoriei la rulare:
     - **Naturală (Do Major):** `0 0 0 0 0 0 0 0 0 0 0 0`
