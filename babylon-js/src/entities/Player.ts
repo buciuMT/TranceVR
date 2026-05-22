@@ -115,4 +115,14 @@ export class Player {
       }
     });
   }
+
+  public setPosition(position: Vector3): void {
+    this._aggregate.body.disablePreStep = false;
+    this._capsule.position.copyFrom(position);
+    this._aggregate.body.setLinearVelocity(Vector3.Zero());
+  }
+
+  public get position(): Vector3 {
+    return this._capsule.position;
+  }
 }

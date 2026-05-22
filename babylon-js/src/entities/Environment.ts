@@ -1,4 +1,4 @@
-import { Scene, AbstractMesh, ImportMeshAsync, PhysicsAggregate, PhysicsShapeType, MeshBuilder, Vector3 } from "@babylonjs/core";
+import { Scene, AbstractMesh, ImportMeshAsync, PhysicsAggregate, PhysicsShapeType } from "@babylonjs/core";
 
 export class Environment {
   private _scene: Scene;
