@@ -63,6 +63,7 @@ export class Player {
     this._camera.keysLeft = [];
     this._camera.keysRight = [];
 
+    this._camera.minZ = 0.1;
     this._camera.checkCollisions = false;
     this._camera.applyGravity = false;
     this._camera.setTarget(new Vector3(0, 0.6, 10));

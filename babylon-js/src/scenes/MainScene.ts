@@ -1,8 +1,4 @@
-import {
-  Scene,
-  Vector3,
-  HemisphericLight,
-} from "@babylonjs/core";
+import { Scene, Vector3, HemisphericLight } from "@babylonjs/core";
 import "@babylonjs/loaders/glTF";
 import { Environment } from "../entities/Environment";
 import { Player } from "../entities/Player";
@@ -38,11 +34,11 @@ export class MainScene {
 
     // 3. Procedural Update Loop
     this._scene.onBeforeRenderObservable.add(() => {
-        this._levelManager.update(this._player.position);
+      this._levelManager.update(this._player.position);
     });
 
     // 4. Start Position
-    this._player.setPosition(new Vector3(0, 2, 0));
+    this._player.setPosition(new Vector3(0, 3, 0));
 
     // 5. Debug Inspector
     this._initInspector();

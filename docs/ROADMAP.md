@@ -39,14 +39,21 @@ Integrarea WebXR pentru suport VR complet și implementarea sistemului de deplas
 
 ---
 
-## 🎵 Epic 3: Audio Engine (On Hold)
-**Status:** Deferred ⏳
+## 🎵 Epic 3: Audio Engine & Reactive Environment
+**Status:** Planned 📋
 
 ### 🎯 Obiectiv
-Integrarea sunetului în proiect (Pure Data este momentan scos din plan).
+Integrarea unui motor audio care extrage metrici în timp real (FFT, RMS, Beat Detection) și sincronizarea acestora cu elementele vizuale din lume (shadere, lumini, geometrie).
 
 ### 🗂️ Task-uri
-*   [ ] **3.1: Basic Web Audio Implementation** (Dacă va fi necesar în viitor)
+*   [ ] **3.1: Audio Analysis System**
+    *   *Descriere:* Implementarea unui `AudioService` care analizează melodia și oferă date despre frecvențe (FFT) și intensitate (RMS).
+*   [ ] **3.2: Beat Detection Logic**
+    *   *Descriere:* Algoritm pentru detectarea kick-ului sau a ritmului pentru a declanșa evenimente discrete.
+*   [ ] **3.3: Reactive Shaders (GLSL/NodeMaterial)**
+    *   *Descriere:* Crearea de shadere care își modifică proprietățile (culoare, distorsiune, emisie) pe baza datelor audio.
+*   [ ] **3.4: Environment Modulation**
+    *   *Descriere:* Modificarea dinamică a mediului (ex: pereții pulsează pe ritm, luminile își schimbă intensitatea).
 
 ---
 
