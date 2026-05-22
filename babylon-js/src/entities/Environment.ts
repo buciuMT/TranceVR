@@ -15,6 +15,10 @@ export class Environment {
     this._scene = scene;
   }
 
+  public get scene(): Scene {
+    return this._scene;
+  }
+
   /**
    * Încarcă un modul de nivel și îi configurează coliziunile.
    * @param name Numele fișierului .glb

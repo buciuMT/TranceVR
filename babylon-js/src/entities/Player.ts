@@ -7,6 +7,7 @@ import {
   FreeCamera,
   AbstractMesh,
   KeyboardEventTypes,
+  SpotLight,
 } from "@babylonjs/core";
 
 export class Player {
@@ -14,6 +15,7 @@ export class Player {
   private _camera!: FreeCamera;
   private _capsule!: AbstractMesh;
   private _aggregate!: PhysicsAggregate;
+  private _flashlight!: SpotLight;
 
   // State pentru taste
   private _input: { [key: string]: boolean } = {};
@@ -67,6 +69,20 @@ export class Player {
     this._camera.checkCollisions = false;
     this._camera.applyGravity = false;
     this._camera.setTarget(new Vector3(0, 0.6, 10));
+
+    // 4. Configurăm Lanterna (Flashlight)
+    // O atașăm direct de cameră ca părinte pentru a se mișca automat cu ea
+    this._flashlight = new SpotLight(
+      "playerFlashlight",
+      Vector3.Zero(), // Poziție relativă la cameră
+      new Vector3(0, 0, 1), // Direcție relativă (în față)
+      Math.PI / 3, // Unghiul conului
+      10, // Exponent (concentrarea fasciculului)
+      this._scene,
+    );
+    this._flashlight.parent = this._camera;
+    this._flashlight.intensity = 100; // Intensitate mult mai mare pentru vizibilitate
+    this._flashlight.range = 100; // Distanța maximă a luminii
   }
 
   private _setupMovement(): void {
@@ -84,6 +100,11 @@ export class Player {
 
     // Loop de actualizare fizică
     this._scene.onBeforeRenderObservable.add(() => {
+      // Consum Baterie Lanternă
+      if (this._flashlight.intensity > 5) {
+        this._flashlight.intensity -= 0.01; // Scade încet
+      }
+
       const forward = this._camera.getDirection(Vector3.Forward());
       forward.y = 0; // Nu vrem să zburăm sus/jos
       forward.normalize();

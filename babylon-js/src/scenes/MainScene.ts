@@ -1,4 +1,10 @@
-import { Scene, Vector3, HemisphericLight } from "@babylonjs/core";
+import {
+  Scene,
+  Vector3,
+  HemisphericLight,
+  Color3,
+  Color4,
+} from "@babylonjs/core";
 import "@babylonjs/loaders/glTF";
 import { Environment } from "../entities/Environment";
 import { Player } from "../entities/Player";
@@ -21,16 +27,23 @@ export class MainScene {
   }
 
   private _initScene(): void {
+    // Fog Configuration
+    this._scene.fogMode = Scene.FOGMODE_LINEAR;
+    this._scene.fogColor = new Color3(0.06, 0.06, 0.06);
+    this._scene.clearColor = new Color4(0.06, 0.06, 0.06, 1.0);
+    this._scene.fogStart = 20.0;
+    this._scene.fogEnd = 60.0;
+
     // 1. Player & Cameră (First Person cu Fizică)
     this._player = new Player(this._scene, this._canvas);
 
-    // 2. Lumină
+    // 2. Lumină Ambientală (foarte slabă pentru a permite lanternei să domine)
     const light = new HemisphericLight(
       "light",
       new Vector3(0, 1, 0),
       this._scene,
     );
-    light.intensity = 0.7;
+    light.intensity = 0.1;
 
     // 3. Procedural Update Loop
     this._scene.onBeforeRenderObservable.add(() => {
