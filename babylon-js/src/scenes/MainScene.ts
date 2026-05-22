@@ -1,16 +1,20 @@
 import {
   Scene,
-  ArcRotateCamera,
   Vector3,
   HemisphericLight,
+  MeshBuilder,
+  PhysicsAggregate,
+  PhysicsShapeType,
 } from "@babylonjs/core";
 import "@babylonjs/loaders/glTF";
 import { Environment } from "../entities/Environment";
+import { Player } from "../entities/Player";
 
 export class MainScene {
   private _scene: Scene;
   private _canvas: HTMLCanvasElement;
   private _environment: Environment;
+  private _player!: Player;
 
   constructor(scene: Scene, canvas: HTMLCanvasElement) {
     this._scene = scene;
@@ -21,16 +25,8 @@ export class MainScene {
   }
 
   private _initScene(): void {
-    // 1. Cameră
-    const camera = new ArcRotateCamera(
-      "camera",
-      Math.PI / 2,
-      Math.PI / 2.5,
-      15,
-      Vector3.Zero(),
-      this._scene,
-    );
-    camera.attachControl(this._canvas, true);
+    // 1. Player & Cameră (First Person cu Fizică)
+    this._player = new Player(this._scene, this._canvas);
 
     // 2. Lumină
     const light = new HemisphericLight(
@@ -40,10 +36,24 @@ export class MainScene {
     );
     light.intensity = 0.7;
 
-    // 3. Environment
+    // 3. DEBUG GROUND (Să vedem dacă fizica funcționează deloc)
+    const debugGround = MeshBuilder.CreateGround(
+      "debugGround",
+      { width: 10, height: 10 },
+      this._scene,
+    );
+    debugGround.position.y = -0.5; // Sub nivelul coridorului
+    new PhysicsAggregate(
+      debugGround,
+      PhysicsShapeType.BOX,
+      { mass: 0 },
+      this._scene,
+    );
+
+    // 4. Environment
     this._loadAssets();
 
-    // 4. Debug Inspector
+    // 5. Debug Inspector
     this._initInspector();
   }
 
@@ -62,9 +72,9 @@ export class MainScene {
 
   private _loadAssets(): void {
     console.log("Încărcare asset-uri în MainScene...", this._environment);
-    // Exemplu de utilizare a entității Environment:
+
     this._environment.loadLevel("coridor2").then(() => {
-      console.log("Level loaded!");
+      console.log("Level loaded! Teleporting in 1s...");
     });
   }
 }

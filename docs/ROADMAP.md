@@ -18,6 +18,9 @@ Crearea unui sistem modular de coridoare, integrarea motorului de fizică Havok 
     *   *Status:* Decis (se continuă cu fișiere separate).
 *   [ ] **1.4: Automatizarea Coliziunilor Statice**
     *   *Descriere:* Generarea automată de `PhysicsShapeMesh` pentru modulele de coridor importate folosind Havok.
+*   [ ] **1.5: Player Controller (Physics-based)**
+    *   *Descriere:* Implementarea unei entități de jucător cu capsulă de fizică și cameră First-Person.
+    *   *Status:* **În lucru.**
 
 ---
 
