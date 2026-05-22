@@ -64,6 +64,12 @@ declaration/
 # src/**/*.js.map
 
 # --- Project Specific ---
+# Blender backup files
+*.blend[0-9]*
+
+# Scripts
+scripts/
+
 # Soundfonts
 *.sf2
 *.sf3
