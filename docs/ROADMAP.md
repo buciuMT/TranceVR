@@ -10,17 +10,18 @@ Crearea unui sistem modular de coridoare, integrarea motorului de fizică Havok 
 *   [x] **1.1: Core Engine Setup**
     *   *Descriere:* Inițializarea Babylon.js, configurarea scenei de bază, camerei și luminii.
     *   *Status:* Finalizat.
-*   [ ] **1.2: Havok Physics Integration**
+*   [x] **1.2: Havok Physics Integration**
     *   *Descriere:* Adăugarea `@babylonjs/havok` în proiect și inițializarea plugin-ului de fizică.
-    *   *Status:* **Prioritate curentă.**
-*   [ ] **1.3: Modular Asset Pipeline (Individual Files)**
+    *   *Status:* Finalizat.
+*   [x] **1.3: Modular Asset Pipeline (Individual Files)**
     *   *Descriere:* Utilizarea fișierelor individuale (`coridor0.glb`, `coridor1.glb` etc.) pentru modulele de coridor.
-    *   *Status:* Decis (se continuă cu fișiere separate).
-*   [ ] **1.4: Automatizarea Coliziunilor Statice**
+    *   *Status:* Finalizat.
+*   [x] **1.4: Automatizarea Coliziunilor Statice**
     *   *Descriere:* Generarea automată de `PhysicsShapeMesh` pentru modulele de coridor importate folosind Havok.
-*   [ ] **1.5: Player Controller (Physics-based)**
+    *   *Status:* Finalizat (Refactorizat pentru precizie în v0.2).
+*   [x] **1.5: Player Controller (Physics-based)**
     *   *Descriere:* Implementarea unei entități de jucător cu capsulă de fizică și cameră First-Person.
-    *   *Status:* **În lucru.**
+    *   *Status:* Finalizat (Radius ajustat la 0.3).
 
 ---
 

@@ -1,4 +1,12 @@
-import { Scene, AbstractMesh, ImportMeshAsync, PhysicsAggregate, PhysicsShapeType } from "@babylonjs/core";
+import {
+  Scene,
+  AbstractMesh,
+  Mesh,
+  ImportMeshAsync,
+  PhysicsAggregate,
+  PhysicsShapeType,
+  Vector3,
+} from "@babylonjs/core";
 
 export class Environment {
   private _scene: Scene;
@@ -7,24 +15,44 @@ export class Environment {
     this._scene = scene;
   }
 
-  public async loadLevel(name: string): Promise<AbstractMesh[]> {
+  /**
+   * Încarcă un modul de nivel și îi configurează coliziunile.
+   * @param name Numele fișierului .glb
+   * @param positionOffset Poziția unde trebuie plasat segmentul
+   */
+  public async loadLevel(name: string, positionOffset: Vector3 = Vector3.Zero()): Promise<AbstractMesh[]> {
     const result = await ImportMeshAsync(`assets/${name}.glb`, this._scene);
-    
-    // Debug: Să vedem câte mesh-uri am importat
-    console.log(`Importate ${result.meshes.length} noduri pentru ${name}`);
 
-    result.meshes.forEach(mesh => {
-      // Verificăm dacă mesh-ul are geometrie și nu e doar un root node
-      if (mesh.getClassName() === "Mesh" && (mesh as any).geometry) {
+    // 1. Poziționăm root-ul (sau toate mesh-urile fără părinte)
+    result.meshes.forEach((m) => {
+      if (!m.parent) {
+        m.position.addInPlace(positionOffset);
+      }
+    });
+
+    // 2. Generăm coliziuni după ce am poziționat obiectele
+    result.meshes.forEach((mesh) => {
+      // Verificăm dacă mesh-ul are geometrie (să nu fie TransformNode sau Root)
+      if (mesh instanceof Mesh && mesh.geometry) {
         try {
-          // Folosim CONVEX_HULL pentru tiles - e mult mai stabil și performant
-          new PhysicsAggregate(mesh, PhysicsShapeType.CONVEX_HULL, { mass: 0, friction: 0.5 }, this._scene);
+          // Forțăm calcularea matricii de lume pentru a ne asigura că physics shape-ul e la locul lui
+          mesh.computeWorldMatrix(true);
+
+          // Folosim MESH pentru obiecte concave (coridoare) 
+          // Havok creează automat un Static Mesh Collider dacă mass e 0
+          new PhysicsAggregate(
+            mesh,
+            PhysicsShapeType.MESH,
+            { mass: 0, friction: 0.5, restitution: 0 },
+            this._scene,
+          );
         } catch (e) {
-          console.error(`Eroare la collider ${mesh.name}:`, e);
+          console.error(`Eroare la crearea colliderului pentru ${mesh.name}:`, e);
         }
       }
     });
 
+    console.log(`[Environment] Încărcat ${name} la ${positionOffset.z}. Meshes: ${result.meshes.length}`);
     return result.meshes;
   }
 }

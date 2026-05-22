@@ -56,17 +56,11 @@ export class LevelManager {
         // Creăm un placeholder în map ca să nu spawnăm de mai multe ori în timp ce se încarcă asincron
         this._segments.set(i, []);
 
-        const meshes = await this._environment.loadLevel(randomType);
-
-        // Poziționăm toate mesh-urile segmentului
         const offset = i * this._segmentLength;
-        meshes.forEach((m) => {
-          // Dacă mesh-ul are un părinte care e tot din acest import, nu îi modificăm poziția direct
-          // GLTF-urile au de obicei un root node.
-          if (!m.parent) {
-            m.position.z += offset;
-          }
-        });
+        const meshes = await this._environment.loadLevel(
+          randomType,
+          new Vector3(0, 0, offset),
+        );
 
         this._segments.set(i, meshes);
         console.log(`Segment spawned la index ${i} (Z: ${offset})`);

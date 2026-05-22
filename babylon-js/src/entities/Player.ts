@@ -29,7 +29,7 @@ export class Player {
     // 1. Creăm un mesh invizibil (capsulă) pentru fizică
     this._capsule = MeshBuilder.CreateCapsule(
       "playerCapsule",
-      { radius: 0.4, height: 1.8 },
+      { radius: 0.3, height: 1.8 },
       this._scene,
     );
     this._capsule.position = new Vector3(0, 3, 0);
@@ -39,7 +39,7 @@ export class Player {
     this._aggregate = new PhysicsAggregate(
       this._capsule,
       PhysicsShapeType.CAPSULE,
-      { mass: 80, friction: 0.5, restitution: 0.1 },
+      { mass: 80, friction: 0.5, restitution: 0 },
       this._scene,
     );
 
