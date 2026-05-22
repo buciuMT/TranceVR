@@ -51,7 +51,9 @@ export class MainScene {
     });
 
     // 4. Start Position
-    this._player.setPosition(new Vector3(0, 3, 0));
+    setTimeout(() => {
+      this._player.setPosition(new Vector3(0, 3, 0));
+    }, 2000); // Delay mic pentru a asigura că totul este inițializat
 
     // 5. Debug Inspector
     this._initInspector();

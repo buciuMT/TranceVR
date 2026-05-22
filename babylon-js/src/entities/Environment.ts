@@ -59,19 +59,19 @@ export class Environment {
         }
       }
 
-      // Configurare Lumini Torțe
-      if (mesh.name.startsWith("torch_lit")) {
-        const light = new PointLight(
-          "light_" + mesh.name + "_" + Math.random(),
-          new Vector3(0, 0.6, 0),
-          this._scene,
-        );
-        light.parent = mesh;
-        light.intensity = 5;
-        light.range = 10;
-        light.diffuse = new Color3(1, 0.6, 0.3); // Portocaliu cald
-        console.log(`[Environment] Adăugat lumină pentru torța: ${mesh.name}`);
-      }
+      // // Configurare Lumini Torțe
+      // if (mesh.name.startsWith("torch_lit")) {
+      //   const light = new PointLight(
+      //     "light_" + mesh.name + "_" + Math.random(),
+      //     new Vector3(0, 0.6, 0),
+      //     this._scene,
+      //   );
+      //   light.parent = mesh;
+      //   light.intensity = 5;
+      //   light.range = 10;
+      //   light.diffuse = new Color3(1, 0.6, 0.3); // Portocaliu cald
+      //   console.log(`[Environment] Adăugat lumină pentru torța: ${mesh.name}`);
+      // }
     });
 
     console.log(
