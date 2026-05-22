@@ -1,42 +1,67 @@
-# 🎵 Roadmap: Filtru Cromatic Psaltic & Transpunere MIDI (ALSA)
-**Arhitectură:** Pure Data (Engine de Calcul $O(1)$) + External FluidSynth (Audio Engine)
+# 🗺️ TranceVR Project Roadmap
+
+## 🚀 Epic 1: Modular Environment & Physics Integration
+**Status:** In Progress 🏗️
+
+### 🎯 Obiectiv
+Crearea unui sistem modular de coridoare, integrarea motorului de fizică Havok și pregătirea infrastructurii pentru generare procedurală.
+
+### 🗂️ Task-uri
+*   [x] **1.1: Core Engine Setup**
+    *   *Descriere:* Inițializarea Babylon.js, configurarea scenei de bază, camerei și luminii.
+    *   *Status:* Finalizat.
+*   [ ] **1.2: Havok Physics Integration**
+    *   *Descriere:* Adăugarea `@babylonjs/havok` în proiect și inițializarea plugin-ului de fizică.
+    *   *Status:* **Prioritate curentă.**
+*   [ ] **1.3: Modular Asset Pipeline (Individual Files)**
+    *   *Descriere:* Utilizarea fișierelor individuale (`coridor0.glb`, `coridor1.glb` etc.) pentru modulele de coridor.
+    *   *Status:* Decis (se continuă cu fișiere separate).
+*   [ ] **1.4: Automatizarea Coliziunilor Statice**
+    *   *Descriere:* Generarea automată de `PhysicsShapeMesh` pentru modulele de coridor importate folosind Havok.
 
 ---
 
-## 🗂️ EPIC 1: MIDI I/O & Transport (Finalizat)
-*Obiectiv: Citirea fișierelor MIDI și controlul fluxului de date.*
-- [x] Integrare `[cyclone/seq]` pentru redare.
-- [x] Suport pentru căi de fișiere cu spații (`[prepend read]`).
-- [x] Control Transport (Play, Stop, Pause).
+## 🕶️ Epic 2: VR Core & Interaction
+**Status:** Planned 📋
+
+### 🎯 Obiectiv
+Integrarea WebXR pentru suport VR complet și implementarea sistemului de deplasare.
+
+### 🗂️ Task-uri
+*   [ ] **2.1: WebXR Experience Helper**
+    *   *Descriere:* Activarea suportului VR cu teleportare și interacțiuni de bază.
+*   [ ] **2.2: VR Controller Mapping**
+    *   *Descriere:* Maparea butoanelor pentru input-uri specifice jocului.
 
 ---
 
-## 🗂️ EPIC 2: Procesorul Matematic (Finalizat)
-*Obiectiv: Alterarea notelor în timp real folosind un Lookup Table.*
-- [x] Implementare Algoritm Modulo-12.
-- [x] Gestiune dinamică a scărilor (Naturală, Psaltică 1, Psaltică 2).
-- [x] Transpunere instantanee cu complexitate constantă.
+## 🎵 Epic 3: Audio Engine (On Hold)
+**Status:** Deferred ⏳
+
+### 🎯 Obiectiv
+Integrarea sunetului în proiect (Pure Data este momentan scos din plan).
+
+### 🗂️ Task-uri
+*   [ ] **3.1: Basic Web Audio Implementation** (Dacă va fi necesar în viitor)
 
 ---
 
-## 🗂️ EPIC 3: Rutare Externă Zero-Latency (Finalizat)
-*Obiectiv: Conectarea la un sintetizator profesional pe PC.*
-- [x] Implementare `[noteout]` pentru ALSA Sequencer.
-- [x] Optimizarea fluxului pentru latență minimă.
-- [x] Documentare script `aconnect` pentru legătură automată.
+## 🏗️ Epic 4: Procedural Generation & Gameplay Loop
+**Status:** Planned 📋
+
+### 🎯 Obiectiv
+Crearea unui sistem care generează coridoare la infinit pe măsură ce jucătorul înaintează.
+
+### 🗂️ Task-uri
+*   [ ] **4.1: Corridor Spawning Logic**
+    *   *Descriere:* Algoritm pentru instanțierea modulelor la capătul coridorului curent.
+*   [ ] **4.2: Game State Manager**
+    *   *Descriere:* Gestionarea progresiei jucătorului și a dificultății.
 
 ---
 
-## 🗂️ EPIC 4: Vizualizarea Datelor & GUI (În curs)
-*Obiectiv: Dashboard interactiv pentru monitorizarea notelor modificate.*
-- [ ] **Task 4.1:** Construirea monitorului live de claviatură (`[kslider]`).
-- [ ] **Task 4.2:** Vizualizarea log-urilor MIDI filtrat (Note On vs Note Off).
-- [ ] **Task 4.3:** Indicator vizual pentru clasa notei curente (0-11).
-- [ ] **Task 4.4:** Încapsulare Graph-on-Parent pentru o interfață curată.
-
----
-
-## 🗂️ EPIC 5: Integrare WebXR (Viitor)
-*Obiectiv: Vizualizarea cinematică a notelor procesate într-un spațiu VR.*
-- [ ] Exportul fluxului MIDI către un port virtual citit de Babylon.js.
-- [ ] Generarea elementelor geometrice bazate pe înălțimea notei.
+## ❓ Întrebări pentru Clarificare
+1. **Naming:** Preferi să păstrăm denumirea `coridor0`, `coridor1` etc., sau vrei să le unim într-un singur `library.glb` așa cum sugera roadmap-ul inițial?
+2. **Physics:** Vrei să mergem pe **Havok** (standard industrial în Babylon) sau pe un motor mai ușor (Cannon.js / Ammo.js)? Momentan nu este instalat nimic.
+3. **Pure Data:** Cum plănuiești să rulezi Pure Data în browser? (WebPd, Ennui, sau export în format Web Audio?)
+4. **Denumiri:** Ce alte denumiri din roadmap ți se păreau "greșite" sau neclare?

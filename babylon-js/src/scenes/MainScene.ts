@@ -42,6 +42,22 @@ export class MainScene {
 
     // 3. Environment
     this._loadAssets();
+
+    // 4. Debug Inspector
+    this._initInspector();
+  }
+
+  private _initInspector(): void {
+    window.addEventListener("keydown", (ev) => {
+      // Shift + I pentru a deschide Inspectorul
+      if (ev.shiftKey && ev.keyCode === 73) {
+        if (this._scene.debugLayer.isVisible()) {
+          this._scene.debugLayer.hide();
+        } else {
+          this._scene.debugLayer.show();
+        }
+      }
+    });
   }
 
   private _loadAssets(): void {
