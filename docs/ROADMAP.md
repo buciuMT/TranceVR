@@ -71,6 +71,22 @@ Crearea unui sistem care generează coridoare la infinit pe măsură ce jucător
 
 ---
 
+## 🌫️ Epic 5: Atmosphere & Mechanics
+**Status:** In Progress 🏗️
+
+### 🎯 Obiectiv
+Crearea unei atmosfere imersive și adăugarea unor mecanici de bază pentru a evita un mediu static și predictibil.
+
+### 🗂️ Task-uri
+*   [x] **5.1: Ceața de Orizont (Fog Effect)**
+    *   *Descriere:* Implementarea unui sistem de ceață liniară pentru a ascunde capătul generării procedurale și a crea tensiune.
+*   [x] **5.2: Mecanică: Bateria Lanternei**
+    *   *Descriere:* Atașarea unui SpotLight de cameră cu intensitate care scade în timp. Necesită mecanici de reîncărcare.
+*   [x] **5.3: Dinamică Procedurală: Obstacole**
+    *   *Descriere:* Spawnarea de obstacole fizice dinamice (pendule, uși glisante, obiecte suspendate) o dată cu coridoarele.
+
+---
+
 ## ❓ Întrebări pentru Clarificare
 1. **Naming:** Preferi să păstrăm denumirea `coridor0`, `coridor1` etc., sau vrei să le unim într-un singur `library.glb` așa cum sugera roadmap-ul inițial?
 2. **Physics:** Vrei să mergem pe **Havok** (standard industrial în Babylon) sau pe un motor mai ușor (Cannon.js / Ammo.js)? Momentan nu este instalat nimic.
