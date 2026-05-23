@@ -36,7 +36,6 @@ src/
 │   │   ├── PostProcessPipeline.ts   # All 5 effects bundled into one component
 │   │   ├── TranceEffect.ts          # { entity, intensity, hueShift, waveStrength, colorTint }
 │   │   ├── ChromaticEffect.ts       # { entity, intensity }
-│   │   ├── PdAudioReactive.ts       # { entity, rmsOverride, bassOverride } — switch audio source to PD
 │   │   ├── PulseEffect.ts           # { entity, intensity }
 │   │   ├── KaleidoscopeEffect.ts    # { entity, intensity }
 │   │   └── InvertEffect.ts          # { entity, intensity }
@@ -54,7 +53,6 @@ src/
 │   ├── AudioService.ts              # Playback + FFT analysis
 │   ├── PostProcessService.ts        # Single uber PostProcess + blur + uniform state
 │   ├── PostProcessManager.ts        # [LEGACY] old multi-pass manager
-│   ├── PdService.ts                 # Pure Data patch runtime (webpd) + FFT analysis
 │   └── ShaderService.ts             # [DEPRECATED]
 │
 ├── entities/
@@ -118,7 +116,6 @@ Single owner of everything — ~520 lines. `main.ts` just calls `Create()`.
 | `AudioService` | `PostProcessSystem` | Playback + FFT RMS |
 | `XRService` | `XRCameraSyncSystem`, `_initXR()` | WebXR lifecycle, camera switching |
 | `PostProcessService` | `PostProcessSystem`, `_initXR()` | Uber shader PostProcess + optional blur |
-| `PdService` | `PostProcessSystem`, `_initPdControls()` | Pure Data patch runtime + FFT analysis |
 | `Environment` | `LevelStreamingSystem`, `_loadInitialSegment()` | GLB loading + physics colliders |
 
 **Systems (run in this order every frame):**
@@ -180,7 +177,6 @@ world.queryComponents(Transform, Player); // → Array<{ entity, components: [Tr
 | `Floor` | `entity` [tag — VR teleport floors] |
 | `Corridor` | `entity, segmentIndex, meshes: AbstractMesh[]` |
 | `PostProcessPipeline` | `entity, tranceIntensity, chromaticIntensity, pulseIntensity, kaleidoscopeIntensity, invertIntensity, tranceHueShift, tranceWaveStrength` |
-| `PdAudioReactive` | `entity, rmsOverride, bassOverride` — switches audio source from AudioService to PdService |
 | `TranceEffect` | `entity, intensity, hueShift, waveStrength, colorTint: Color3` |
 | `ChromaticEffect` | `entity, intensity` |
 | `PulseEffect` | `entity, intensity` |
@@ -220,7 +216,6 @@ Two modes, checked in order:
 2. **Component mode:** queries each individual effect component type, takes **max intensity** across all entities.
 
 Also feeds `AudioService.getRMS()` into `PostProcessService.updateAudio()` every frame.
-Audio source selection: if any entity has `PdAudioReactive`, RMS is taken from `PdService` instead of `AudioService`.
 
 ---
 
@@ -315,84 +310,6 @@ class InputManager {
 }
 ```
 
-### 5.5 PdService (`services/PdService.ts`)
-
-Runs Pure Data patches in the browser via the `webpd` WebAssembly runtime.
-Provides procedural audio generation, message passing to/from patches,
-and FFT analysis for driving visual effects.
-
-Owned by the Engine, injected into `PostProcessSystem`.
-Initialised lazily on first use (key `P` or `4`).
-
-```ts
-class PdService {
-  init(audioContext?: AudioContext): Promise<void>     // loads webpd WASM
-  loadPatch(url: string): Promise<void>                 // fetch .pd from URL
-  loadPatchFromFile(file: File): Promise<void>          // user upload
-  loadPatchFromString(patchSource: string): void
-  closePatch(): void
-
-  connectAudio(destination?: AudioNode): void           // route to Web Audio
-  start(): Promise<void>                                // resume DSP
-  stop(): void                                          // pause DSP
-  dispose(): void                                       // full teardown
-
-  sendFloat(receiver: string, value: number): void
-  sendBang(receiver: string): void
-  sendSymbol(receiver: string, symbol: string): void
-  sendList(receiver: string, list: (number|string)[]): void
-  sendMessage(receiver: string, message: string): void
-  sendNoteOn(channel: number, pitch: number, velocity: number): void
-  sendNoteOff(channel: number, pitch: number): void
-
-  subscribe(receiver: string, cb: (...args: any[]) => void): void
-  unsubscribe(receiver: string): void
-
-  getRMS(): number                                      // 0–255 root mean square
-  getFrequencyData(): Uint8Array                        // 256 FFT bins
-  getBassLevel(): number                                // 0–255 first 10 bins avg
-
-  get isRunning(): boolean
-  get isPatchLoaded(): boolean
-  get audioContext(): AudioContext | null
-}
-```
-
-**Audio routing:** PD output → internal `AnalyserNode` → destination (Web Audio
-graph). The analyser is always connected so FFT data is available even when PD
-is the sole audio source.
-
-**ECS integration:** when a `PdAudioReactive` component exists on any entity,
-`PostProcessSystem` switches from `AudioService.getRMS()` to `PdService.getRMS()`.
-This lets procedural PD audio drive the shader effects instead of the main track.
-
-**Keyboard shortcuts for PD:**
-
-| Key | Action |
-|-----|--------|
-| `P` | Open file dialog to load a .pd patch (lazy-inits webpd) |
-| `4` | Quick-load sample `assets/patches/drone.pd` |
-| `[` | Stop PD DSP |
-| `]` | Start/resume PD DSP |
-
-**Sample patch** (`public/assets/patches/drone.pd`): dual oscillator drone
-(220 Hz + 440 Hz) with a `[r masterVolume]` receive for real-time level control.
-
-**Example usage from code:**
-
-```ts
-engine.pd.sendFloat("masterVolume", 0.3);
-engine.pd.sendNoteOn(0, 60, 100);  // middle C
-
-// Switch post-process audio source to PD
-engine.world.add(new PdAudioReactive({ entity: playerEntity }));
-
-// Subscribe to patch output
-engine.pd.subscribe("analysis", (rms, pitch) => {
-  console.log(`PD RMS: ${rms}, Pitch: ${pitch}`);
-});
-```
-
 ---
 
 ## 6. Shaders
@@ -468,33 +385,6 @@ AudioEngineV2 → AnalyserNode (fftSize=512)
               tranceUber.frag.glsl + optional BlurPostProcess
 ```
 
-### 7.1b PD Audio → Visual
-
-```
-webpd WASM (running .pd patch)
-       │
-       ▼
-AnalyserNode (fftSize=512)
-       │
-       ├── getByteFrequencyData() → Uint8Array[256]
-       └── PdService.getRMS()         (0–255)
-             │
-             ▼
-PostProcessSystem.update(dt)
-       │
-       ├── If PdAudioReactive component exists → PdService.getRMS()
-       ├── Else → AudioService.getRMS()
-       │
-       ▼
-PostProcessService.updateAudio(rms)
-       │
-       ├── uTranceAudioReactivity = rms
-       └── uPulseLevel = rms / 255
-             │
-             ▼
-  tranceUber.frag.glsl + optional BlurPostProcess
-```
-
 ### 7.2 Camera Switching (Flat ↔ XR)
 
 ```
@@ -560,10 +450,6 @@ PostProcessSystem.update(dt)
 | `1` | Load `assets/track1.wav` |
 | `2` | Load `assets/track2.wav` |
 | `3` | Placeholder |
-| `4` | Quick-load sample `drone.pd` patch (lazy-inits webpd) |
-| `P` | Open file dialog to load a .pd patch |
-| `[` | Stop PD DSP |
-| `]` | Start/resume PD DSP |
 | `O` | Open local audio file |
 | `Ctrl+1` | Toggle Trance effect (activates PostProcess on first use) |
 | `Ctrl+2` | Toggle Chromatic effect |

@@ -11,4 +11,3 @@ export { PulseEffect } from "./PulseEffect";
 export { KaleidoscopeEffect } from "./KaleidoscopeEffect";
 export { InvertEffect } from "./InvertEffect";
 export { PostProcessPipeline } from "./PostProcessPipeline";
-export { PdAudioReactive } from "./PdAudioReactive";

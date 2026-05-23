@@ -112,9 +112,8 @@ export class GameEngine {
     // 6. Post‑processing — activated lazily on first Ctrl+1..5 keypress
     // (avoids black‑screen on startup if shader compilation fails)
 
-    // 7. Audio + post-process controls + PD patch controls
+    // 7. Audio + post-process controls
     game._initAudioControls();
-    game._initPdControls();
     game._initEffectShortcuts();
 
     // 8. Inspector
@@ -139,9 +138,6 @@ export class GameEngine {
 
   get audio(): AudioService {
     return this._audio;
-  }
-  get pd(): PdService {
-    return this._pd;
   }
   get xr(): XRService {
     return this._xr;
@@ -221,7 +217,7 @@ export class GameEngine {
       new LightDrainSystem(this._world),
       new LevelStreamingSystem(this._world, this._environment),
       new XRCameraSyncSystem(this._world, this._xr),
-      new PostProcessSystem(this._world, this._postProcess, this._audio, this._pd),
+      new PostProcessSystem(this._world, this._postProcess, this._audio),
     ];
 
     console.log(
@@ -428,107 +424,6 @@ export class GameEngine {
 
     // Auto-play default track
     this._audio.loadTrack("assets/track1.wav");
-  }
-
-  // =========================================================================
-  // PD patch controls (keyboard shortcuts)
-  // =========================================================================
-
-  private _initPdControls(): void {
-    // Hidden file input for loading .pd patches
-    const pdFileInput = document.createElement("input");
-    pdFileInput.type = "file";
-    pdFileInput.accept = ".pd";
-    pdFileInput.style.display = "none";
-    document.body.appendChild(pdFileInput);
-
-    pdFileInput.onchange = async (e: any) => {
-      const file = e.target.files[0];
-      if (!file) return;
-
-      try {
-        // Lazy-init PD engine on first use
-        await this._ensurePdReady();
-
-        // Stop current patch if running
-        if (this._pd.isRunning) {
-          this._pd.stop();
-        }
-        if (this._pd.isPatchLoaded) {
-          this._pd.closePatch();
-        }
-
-        await this._pd.loadPatchFromFile(file);
-        this._pd.connectAudio();
-        await this._pd.start();
-        console.log(`[Engine] PD patch loaded from file: ${file.name}`);
-      } catch (e) {
-        console.error("[Engine] Failed to load PD patch from file:", e);
-      }
-    };
-
-    window.addEventListener("keydown", async (ev) => {
-      switch (ev.key) {
-        case "p":
-        case "P": {
-          // 'P' → open file dialog to load .pd patch
-          if (!ev.ctrlKey && !ev.metaKey) {
-            await this._ensurePdReady();
-            pdFileInput.click();
-          }
-          break;
-        }
-        case "4": {
-          // '4' → quick‑load sample drone.pd patch
-          if (!ev.ctrlKey && !ev.metaKey) {
-            await this._ensurePdReady();
-            if (this._pd.isRunning) this._pd.stop();
-            if (this._pd.isPatchLoaded) this._pd.closePatch();
-            try {
-              await this._pd.loadPatch("assets/patches/drone.pd");
-              this._pd.connectAudio();
-              await this._pd.start();
-              console.log("[Engine] Sample PD patch loaded (drone.pd).");
-            } catch (e) {
-              console.error("[Engine] Failed to load sample drone.pd:", e);
-            }
-          }
-          break;
-        }
-        case "[": {
-          // '[' → stop PD DSP
-          if (!ev.ctrlKey && !ev.metaKey && this._pd.isRunning) {
-            this._pd.stop();
-            console.log("[Engine] PD DSP stopped.");
-          }
-          break;
-        }
-        case "]": {
-          // ']' → start/resume PD DSP
-          if (!ev.ctrlKey && !ev.metaKey && this._pd.isPatchLoaded && !this._pd.isRunning) {
-            this._pd.start();
-            console.log("[Engine] PD DSP started.");
-          }
-          break;
-        }
-      }
-    });
-  }
-
-  /** Lazily initialise the Pure Data engine (imports webpd WASM on first use). */
-  private async _ensurePdReady(): Promise<void> {
-    // If already initialised, skip
-    if (this._pd.pd !== null) return;
-
-    try {
-      // Use the AudioService's engine's audio context if available, otherwise let PdService create its own
-      const audioCtx = (this._audio.engine as any)?._audioContext as AudioContext | undefined;
-      await this._pd.init(audioCtx);
-      console.log("[Engine] PD engine initialised.");
-    } catch (e) {
-      console.error("[Engine] Failed to initialise PD:", e);
-      throw e;
-    }
   }
 
   // =========================================================================

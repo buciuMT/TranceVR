@@ -7,11 +7,9 @@ import {
   KaleidoscopeEffect,
   InvertEffect,
   PostProcessPipeline,
-  PdAudioReactive,
 } from "../components";
 import { PostProcessService } from "../../services/PostProcessService";
 import { AudioService } from "../../services/AudioService";
-import { PdService } from "../../services/PdService";
 
 /**
  * Drives post‑processing shader uniforms from ECS component state.
@@ -27,25 +25,16 @@ import { PdService } from "../../services/PdService";
 export class PostProcessSystem extends System {
   private _postProcess: PostProcessService;
   private _audio: AudioService;
-  private _pd: PdService | null;
 
-  constructor(world: World, postProcess: PostProcessService, audio: AudioService, pd?: PdService) {
+  constructor(world: World, postProcess: PostProcessService, audio: AudioService) {
     super(world);
     this._postProcess = postProcess;
     this._audio = audio;
-    this._pd = pd ?? null;
   }
 
   update(_dt: number): void {
-    // 1. Feed audio — prefer PD if a PdAudioReactive component is present
-    const pdReactive = this._world.queryComponents(PdAudioReactive);
-    let rms: number;
-    if (pdReactive.length > 0 && this._pd) {
-      const pdr = pdReactive[0].components[0];
-      rms = pdr.rmsOverride > 0 ? pdr.rmsOverride : this._pd.getRMS();
-    } else {
-      rms = this._audio.getRMS();
-    }
+    // 1. Feed audio
+    const rms = this._audio.getRMS();
     this._postProcess.updateAudio(rms);
 
     // 2. Try PostProcessPipeline first (convenience mode)
