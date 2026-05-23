@@ -9,6 +9,7 @@ import "@babylonjs/loaders/glTF";
 import { Environment } from "../entities/Environment";
 import { Player } from "../entities/Player";
 import { LevelManager } from "../entities/LevelManager";
+import { AudioService } from "../services/AudioService";
 
 export class MainScene {
   private _scene: Scene;
@@ -16,14 +17,59 @@ export class MainScene {
   private _environment: Environment;
   private _levelManager: LevelManager;
   private _player!: Player;
+  private _audioService: AudioService;
 
   constructor(scene: Scene, canvas: HTMLCanvasElement) {
     this._scene = scene;
     this._canvas = canvas;
     this._environment = new Environment(this._scene);
     this._levelManager = new LevelManager(this._environment);
+    this._audioService = new AudioService();
 
     this._initScene();
+    this._initAudioControls();
+  }
+
+  private _initAudioControls(): void {
+    // Hidden file input for loading local tracks
+    const fileInput = document.createElement("input");
+    fileInput.type = "file";
+    fileInput.accept = "audio/*";
+    fileInput.style.display = "none";
+    document.body.appendChild(fileInput);
+
+    fileInput.onchange = (e: any) => {
+      const file = e.target.files[0];
+      if (file) {
+        this._audioService.loadTrack(file);
+      }
+    };
+
+    window.addEventListener("keydown", (ev) => {
+      switch (ev.key) {
+        case "1":
+          this._audioService.loadTrack("assets/track1.wav");
+          break;
+        case "2":
+          // Placeholder URLs for other tracks
+          console.log("Track 2 requested (placeholder)");
+          this._audioService.loadTrack("assets/track2.mp3");
+          break;
+        case "3":
+          console.log("Track 3 requested (placeholder)");
+          // this._audioService.loadTrack("assets/track3.mp3");
+          break;
+        case "o":
+        case "O":
+          fileInput.click();
+          break;
+      }
+    });
+
+    // Auto-play default track (might require user interaction first in some browsers)
+    // We'll try to load it, but browsers usually block autoplay without interaction.
+    // The loading screen interaction or a key press will likely trigger it.
+    this._audioService.loadTrack("assets/track1.wav");
   }
 
   private _initScene(): void {
