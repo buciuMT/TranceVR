@@ -40,8 +40,8 @@
 #X obj 150 540 bng 15 250 50 0 empty empty REC_START 17 7 0 10 #fcfcfc #000000 #000000;
 #X msg 150 570 record;
 #X obj 250 540 bng 15 250 50 0 empty empty SAVE_MIDI 17 7 0 10 #fcfcfc #000000 #000000;
-#X msg 250 570 write spiegel_psaltic.mid;
 #X msg 150 600 stop;
+#X msg 250 570 write spiegel_modificat.mid;
 #X connect 0 0 1 0;
 #X connect 1 0 2 0;
 #X connect 2 0 3 0;
@@ -68,6 +68,7 @@
 #X connect 10 0 24 0;
 #X connect 10 1 11 0;
 #X connect 10 1 29 1;
+#X connect 10 1 35 1;
 #X connect 11 0 13 0;
 #X connect 11 1 12 0;
 #X connect 11 1 31 0;
@@ -88,11 +89,10 @@
 #X connect 28 1 35 0;
 #X connect 33 0 34 1;
 #X connect 33 1 34 0;
-#X connect 10 1 35 1;
 #X connect 35 0 36 0;
 #X connect 36 0 37 0;
 #X connect 38 0 39 0;
 #X connect 39 0 37 0;
-#X connect 40 0 41 0;
+#X connect 40 0 42 0;
 #X connect 41 0 37 0;
 #X connect 42 0 37 0;

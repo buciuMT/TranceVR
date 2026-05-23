@@ -53,11 +53,11 @@ export class MainScene {
         case "2":
           // Placeholder URLs for other tracks
           console.log("Track 2 requested (placeholder)");
-          this._audioService.loadTrack("assets/track2.mp3");
+          this._audioService.loadTrack("assets/track2.wav");
           break;
         case "3":
           console.log("Track 3 requested (placeholder)");
-          // this._audioService.loadTrack("assets/track3.mp3");
+          // this._audioService.loadTrack("assets/track3.wav");
           break;
         case "o":
         case "O":
