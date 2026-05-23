@@ -16,7 +16,22 @@ class App {
     // Injectează scene-ul și canvas-ul în controller-ul de scenă specific
     new MainScene(game.scene, game.canvas);
 
+    this._hideLoadingScreen();
+
     console.log("TranceVR: Sistem modular inițializat cu Havok Physics.");
+  }
+
+  private _hideLoadingScreen() {
+    const loadingScreen = document.getElementById("loading-screen");
+    if (loadingScreen) {
+      setTimeout(() => {
+        loadingScreen.classList.add("fade-out");
+        // Opțional: Elimină complet din DOM după ce tranziția de fade-out s-a terminat
+        setTimeout(() => {
+          loadingScreen.remove();
+        }, 800); // corelat cu transition: opacity 0.8s în CSS
+      }, 2500); // Așteaptă 2.5 secunde "la mișto"
+    }
   }
 }
 

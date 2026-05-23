@@ -13,3 +13,82 @@ html, body {
     touch-action: none;
     outline: none;
 }
+
+#loading-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #060606;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    transition: opacity 0.8s ease-out;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #fff;
+}
+
+.loader-content {
+    text-align: center;
+}
+
+.logo {
+    font-size: 4rem;
+    font-weight: 900;
+    letter-spacing: 1rem;
+    margin-bottom: 2rem;
+    text-shadow: 0 0 20px rgba(0, 162, 255, 0.5);
+    animation: pulse 2s infinite ease-in-out;
+}
+
+.highlight {
+    color: #00a2ff;
+}
+
+.loading-bar-container {
+    width: 300px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+    margin: 0 auto 1rem;
+    overflow: hidden;
+    position: relative;
+}
+
+.loading-bar {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, #00a2ff, transparent);
+    position: absolute;
+    left: -100%;
+    animation: loading 2s infinite linear;
+}
+
+.loading-text {
+    font-size: 0.8rem;
+    letter-spacing: 0.3rem;
+    opacity: 0.6;
+    animation: blink 1.5s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.05); opacity: 0.8; }
+}
+
+@keyframes loading {
+    0% { left: -100%; }
+    100% { left: 100%; }
+}
+
+@keyframes blink {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 0.8; }
+}
+
+.fade-out {
+    opacity: 0;
+    pointer-events: none;
+}

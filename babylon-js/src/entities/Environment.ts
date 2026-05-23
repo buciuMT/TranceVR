@@ -6,8 +6,6 @@ import {
   PhysicsAggregate,
   PhysicsShapeType,
   Vector3,
-  PointLight,
-  Color3,
 } from "@babylonjs/core";
 
 export class Environment {
