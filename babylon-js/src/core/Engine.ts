@@ -9,9 +9,9 @@ export class GameEngine {
   private constructor(canvasId: string) {
     this._canvas = document.getElementById(canvasId) as HTMLCanvasElement;
     this._engine = new Engine(this._canvas, true, {
-      disableUniformBuffers: true, // ACEASTA ESTE REZOLVAREA DIRECTĂ
       deterministicLockstep: true, // util pentru fizica Havok ulterior
     });
+    this._engine.disableUniformBuffers = true; // ACEASTA ESTE REZOLVAREA DIRECTĂ
     this._scene = new Scene(this._engine);
   }
 

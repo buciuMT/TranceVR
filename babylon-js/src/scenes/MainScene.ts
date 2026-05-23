@@ -43,7 +43,7 @@ export class MainScene {
       new Vector3(0, 1, 0),
       this._scene,
     );
-    light.intensity = 0.1;
+    light.intensity = 0.15;
 
     // 3. Procedural Update Loop
     this._scene.onBeforeRenderObservable.add(() => {

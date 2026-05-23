@@ -81,8 +81,8 @@ export class Player {
       this._scene,
     );
     this._flashlight.parent = this._camera;
-    this._flashlight.intensity = 100; // Intensitate mult mai mare pentru vizibilitate
-    this._flashlight.range = 100; // Distanța maximă a luminii
+    this._flashlight.intensity = 200;
+    this._flashlight.range = 200;
   }
 
   private _setupMovement(): void {
@@ -102,7 +102,7 @@ export class Player {
     this._scene.onBeforeRenderObservable.add(() => {
       // Consum Baterie Lanternă
       if (this._flashlight.intensity > 5) {
-        this._flashlight.intensity -= 0.01; // Scade încet
+        this._flashlight.intensity -= 0.001; // Scade încet
       }
 
       const forward = this._camera.getDirection(Vector3.Forward());
