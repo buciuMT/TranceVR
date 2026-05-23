@@ -4,6 +4,7 @@ import {
   HemisphericLight,
   Color3,
   Color4,
+  WebXRDefaultExperience,
 } from "@babylonjs/core";
 import "@babylonjs/loaders/glTF";
 import { Environment } from "../entities/Environment";
@@ -18,6 +19,7 @@ export class MainScene {
   private _levelManager: LevelManager;
   private _player!: Player;
   private _audioService: AudioService;
+  private _xr!: WebXRDefaultExperience;
 
   constructor(scene: Scene, canvas: HTMLCanvasElement) {
     this._scene = scene;
@@ -28,6 +30,82 @@ export class MainScene {
 
     this._initScene();
     this._initAudioControls();
+    this._initXR();
+  }
+
+  private async _initXR(): Promise<void> {
+    try {
+      this._xr = await this._scene.createDefaultXRExperienceAsync({
+        floorMeshes: [], // Inițial gol
+      });
+
+      // Configurăm Mișcarea Smooth (Joystick)
+      try {
+        this._xr.baseExperience.featuresManager.enableFeature(
+          "xr-controller-movement",
+          "latest",
+          {
+            xrInput: this._xr.input,
+            movementOrientationFollowsViewerPose: true,
+            movementOrientationFollowsController: true,
+          },
+        );
+      } catch (e) {
+        console.warn("[XR] Mișcarea prin controller nu a putut fi activată:", e);
+      }
+
+      // Sincronizare poziție XR cu Player Capsule
+      this._xr.baseExperience.onStateChangedObservable.add((state) => {
+        if (state === 2) { // Entering VR
+          console.log("[XR] Intrat în modul VR");
+          
+          // Calculăm poziția "picioarelor" player-ului (capsula are înălțime 1.8, deci centrul e la +0.9 față de bază)
+          const footPosition = this._player.position.clone();
+          footPosition.y -= 0.9; 
+
+          // În WebXR cu local-floor, camera.position reprezintă capul.
+          // Pentru a pune jucătorul unde este capsula, trebuie să mutăm rig-ul (sau să folosim setTransformationFromCamera)
+          // O variantă simplă este să setăm poziția camerei pe XZ, dar să lăsăm Y-ul să fie gestionat de înălțimea reală + offset-ul podelei.
+          // Babylon XR gestionează Y-ul automat dacă nu îl forțăm.
+          
+          this._xr.baseExperience.camera.position.set(footPosition.x, this._xr.baseExperience.camera.position.y, footPosition.z);
+        } else if (state === 0) { // Exiting VR
+          console.log("[XR] Ieșit din modul VR");
+          this._player.attachFlashlightTo(null);
+        }
+      });
+
+      // Atașare lanternă de controllerul din mâna dreaptă
+      this._xr.input.onControllerAddedObservable.add((controller) => {
+        controller.onMotionControllerInitObservable.add((motionController) => {
+          if (motionController.handness === "right") {
+            console.log("[XR] Atașez lanterna de controllerul drept");
+            this._player.attachFlashlightTo(controller.grip || controller.pointer);
+          }
+        });
+      });
+
+      // Loop de actualizare pentru podele și sincronizare fizică
+      this._scene.onBeforeRenderObservable.add(() => {
+        if (this._xr && this._xr.baseExperience.state === 2) {
+          // 1. Actualizăm floorMeshes pentru teleportare
+          const floors = this._levelManager.getFloorMeshes();
+          if (this._xr.teleportation) {
+            floors.forEach(f => {
+              this._xr.teleportation.addFloorMesh(f);
+            });
+          }
+
+          // 2. Sincronizăm Capsula de Fizică cu Camera VR (pentru coliziuni)
+          const cameraPos = this._xr.baseExperience.camera.position;
+          this._player.setPosition(new Vector3(cameraPos.x, this._player.position.y, cameraPos.z));
+        }
+      });
+
+      console.log("[XR] Sistem WebXR inițializat.");
+    } catch (e) {
+      console.warn("[XR] WebXR nu este suportat sau a apărut o eroare:", e);
+    }
   }
 
   private _initAudioControls(): void {

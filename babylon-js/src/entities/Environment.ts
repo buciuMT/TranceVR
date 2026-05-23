@@ -39,6 +39,11 @@ export class Environment {
 
     // 2. Generăm coliziuni și adăugăm lumini pentru torțe
     result.meshes.forEach((mesh) => {
+      // Identificăm podeaua pentru VR
+      if (mesh.name.toLowerCase().includes("floor") || mesh.name.toLowerCase().includes("ground")) {
+        mesh.metadata = { ...mesh.metadata, isFloor: true };
+      }
+
       // Configurare Coliziuni (Physics)
       if (mesh instanceof Mesh && mesh.geometry) {
         try {

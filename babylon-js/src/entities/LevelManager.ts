@@ -22,6 +22,21 @@ export class LevelManager {
   }
 
   /**
+   * Returnează toate mesh-urile marcate ca podea din segmentele active.
+   */
+  public getFloorMeshes(): AbstractMesh[] {
+    const floorMeshes: AbstractMesh[] = [];
+    this._segments.forEach((meshes) => {
+      meshes.forEach((m) => {
+        if (m.metadata && m.metadata.isFloor) {
+          floorMeshes.push(m);
+        }
+      });
+    });
+    return floorMeshes;
+  }
+
+  /**
    * Actualizează segmentele în funcție de poziția jucătorului.
    */
   public update(playerPosition: Vector3): void {

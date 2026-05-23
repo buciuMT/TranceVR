@@ -147,4 +147,20 @@ export class Player {
   public get position(): Vector3 {
     return this._capsule.position;
   }
+
+  /**
+   * Atașează lanterna de un alt nod (ex: controller VR).
+   */
+  public attachFlashlightTo(node: any): void {
+    if (node) {
+      this._flashlight.parent = node;
+      this._flashlight.position = Vector3.Zero();
+      this._flashlight.direction = new Vector3(0, 0, 1);
+    } else {
+      // Revenire la cameră
+      this._flashlight.parent = this._camera;
+      this._flashlight.position = Vector3.Zero();
+      this._flashlight.direction = new Vector3(0, 0, 1);
+    }
+  }
 }
