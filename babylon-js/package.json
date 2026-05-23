@@ -17,6 +17,7 @@
     "@babylonjs/core": "^9.9.1",
     "@babylonjs/havok": "^1.3.12",
     "@babylonjs/inspector": "^9.9.1",
-    "@babylonjs/loaders": "^9.9.1"
+    "@babylonjs/loaders": "^9.9.1",
+    "webpd": "~1.0.0-alpha.14"
   }
 }

@@ -1,0 +1,18 @@
+#N canvas 400 200 600 500 12;
+#X obj 150 150 osc~ 220;
+#X obj 150 250 *~ 0.3;
+#X obj 150 350 dac~;
+#X obj 150 50 r masterVolume;
+#X obj 350 150 osc~ 440;
+#X obj 350 250 *~ 0.1;
+#X obj 350 350 dac~;
+#X obj 50 50 loadbang;
+#X msg 50 80 \; masterVolume 0.5;
+#X connect 0 0 1 0;
+#X connect 1 0 2 0;
+#X connect 1 0 2 1;
+#X connect 3 0 1 1;
+#X connect 4 0 5 0;
+#X connect 5 0 6 0;
+#X connect 5 0 6 1;
+#X connect 7 0 8 0;
