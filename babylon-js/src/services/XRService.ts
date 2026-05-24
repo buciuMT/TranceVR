@@ -94,10 +94,11 @@ export class XRService {
 
   /**
    * Register a callback invoked when a motion controller initializes.
-   * Provides the motion controller, its handedness, and a grip node for attaching meshes.
+   * Provides the input source, motion controller, its handedness, and a grip node for attaching meshes.
    */
   public onControllerAdded(
     callback: (
+      inputSource: any,
       motionController: any,
       handedness: "left" | "right",
       gripNode: any,
@@ -107,6 +108,7 @@ export class XRService {
     this._xr.input.onControllerAddedObservable.add((controller) => {
       controller.onMotionControllerInitObservable.add((motionController) => {
         callback(
+          controller,
           motionController,
           motionController.handness as "left" | "right",
           controller.grip || controller.pointer,
