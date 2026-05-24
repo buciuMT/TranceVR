@@ -1,16 +1,22 @@
 import { defineConfig } from "vite";
-import basicSsl from "@vitejs/plugin-basic-ssl";
 
-export default defineConfig({
-  plugins: [basicSsl()],
-  server: {
-    https: true,
-    host: "0.0.0.0", // Permite accesul din rețeaua locală (LAN)
-    port: 5173, // Portul standard pe care îl dorești
-    strictPort: true, // Dacă portul 5173 este ocupat, dă eroare în loc să treacă automat la 5174
-  },
-  resolve: {
-    // Asigură-te că rezolvarea de căi funcționează corect dacă ai alias-uri,
-    // deși pentru structura ta curentă setările serverului sunt cele critice.
-  },
+export default defineConfig(async ({ command }) => {
+  const plugins = [];
+  if (command === "serve") {
+    const basicSsl = (await import("@vitejs/plugin-basic-ssl")).default;
+    plugins.push(basicSsl());
+  }
+
+  return {
+    plugins,
+    server: command === "serve"
+      ? {
+          https: true,
+          host: "0.0.0.0",
+          port: 5173,
+          strictPort: true,
+        }
+      : {},
+    resolve: {},
+  };
 });

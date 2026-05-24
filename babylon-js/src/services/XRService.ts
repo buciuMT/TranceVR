@@ -43,6 +43,7 @@ export class XRService {
           {
             xrInput: this._xr.input,
             movementOrientationFollowsViewerPose: true,
+            movementOrientationFollowsController: false,
             rotationEnabled: false,  // rotation handled by the teleportation module
           },
         );
