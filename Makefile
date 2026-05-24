@@ -5,12 +5,15 @@ INIT_FILE = fluidsynth.init
 MIDI_FILE = pure-data/spiegel_modificat.mid
 OUTPUT_FILE = spiegel_sgm_final.wav
 
+SLIDES_DIR = slides
+SLIDES_SRC = presentation.tex
+
 # FluidSynth Config
 AUDIO_DRIVER = pipewire
 MIDI_DRIVER = alsa_seq
 GAIN = 0.8
 
-.PHONY: all run-synth bridge-midi export-wav clean help
+.PHONY: all run-synth bridge-midi export-wav clean help slides slides-watch
 
 help:
 	@echo "Filtru Cromatic Psaltic - Orchestration Tool"
@@ -19,7 +22,9 @@ help:
 	@echo "  make run-synth    - Start FluidSynth (Server Mode) for real-time monitoring"
 	@echo "  make bridge-midi  - Connect Pure Data MIDI output to FluidSynth"
 	@echo "  make export-wav   - Render the recorded $(MIDI_FILE) to $(OUTPUT_FILE)"
-	@echo "  make clean        - Stop FluidSynth processes and remove temp MIDI"
+	@echo "  make slides       - Build the LaTeX presentation"
+	@echo "  make slides-watch - Build and watch the LaTeX presentation for changes"
+	@echo "  make clean        - Stop processes and remove temporary files"
 
 run-synth:
 	@echo "Cleaning up old processes..."
@@ -36,7 +41,17 @@ export-wav:
 	@echo "Rendering $(MIDI_FILE) to $(OUTPUT_FILE)..."
 	@fluidsynth -ni -g $(GAIN) -F $(OUTPUT_FILE) -f $(INIT_FILE) $(SOUNDFONT_PATH) $(MIDI_FILE)
 
+slides:
+	@echo "Building slides..."
+	cd $(SLIDES_DIR) && latexmk -xelatex -interaction=nonstopmode $(SLIDES_SRC)
+
+slides-watch:
+	@echo "Watching slides for changes..."
+	cd $(SLIDES_DIR) && latexmk -xelatex -pvc $(SLIDES_SRC)
+
 clean:
-	@killall fluidsynth || true
+	@killall fluidsynth 2>/dev/null || true
 	@rm -f $(MIDI_FILE)
-	@echo "Processes stopped."
+	@echo "Cleaning LaTeX auxiliary files..."
+	cd $(SLIDES_DIR) && latexmk -C
+	@echo "Processes stopped and files cleaned."
