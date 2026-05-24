@@ -14,12 +14,11 @@ uniform float uWeirdness;
 
 uniform vec3 uCameraPos;
 uniform mat4 uInverseViewProj;
-
+uniform float uKick;
 uniform float uBass;
 uniform float uTreble;
 uniform float uHighTone;
 uniform float uFilterType;  // -1=highpass, 0=none, 1=lowpass
-
 #define Iterations 32
 #define PI 3.14159265359
 
