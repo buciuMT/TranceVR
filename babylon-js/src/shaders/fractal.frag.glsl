@@ -29,7 +29,7 @@ uniform float uTone;       // reserved
 // =========================================================================
 
 float rand(vec3 r) {
-    return fract(sin(dot(r.xy, vec2(1.38945 * sin(r.z), 1.13233 * cos(r.z)))) * 653758.5453);
+    return fract(sin(dot(r.xy, vec2(1.38945 * sin(r.z) *sin(uTime), 1.13233 * cos(r.z)))) * 653758.5453);
 }
 
 float truchetarc(vec3 pos, float thickness, float superQuadPower) {

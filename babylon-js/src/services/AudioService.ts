@@ -1,5 +1,13 @@
 import { CreateAudioEngineAsync, AudioEngineV2, StreamingSound } from "@babylonjs/core/AudioV2";
 
+export interface AudioAnalysis {
+  bass:       number;  // 0-1, ~0-250 Hz
+  mid:        number;  // 0-1, ~250-2000 Hz
+  treble:     number;  // 0-1, ~2000-8000 Hz
+  highTone:   number;  // 0-1, ~8000+ Hz
+  filterType: 'lowpass' | 'highpass' | 'none';
+}
+
 export class AudioService {
   private _engine: AudioEngineV2 | null = null;
   private _currentSound: StreamingSound | null = null;
@@ -21,6 +29,7 @@ export class AudioService {
       if (ctx) {
         this._analyser = ctx.createAnalyser();
         this._analyser.fftSize = 512;
+        this._analyser.smoothingTimeConstant = 0.85;
         this._frequencyData = new Uint8Array(this._analyser.frequencyBinCount);
         
         // În AudioEngineV2, putem accesa mainOut. 
@@ -96,6 +105,37 @@ export class AudioService {
       sum += data[i] * data[i];
     }
     return Math.sqrt(sum / data.length);
+  }
+
+  /**
+   * Returns per-band energy scalars (0-1) and a heuristic filter detection.
+   * Bin ranges assume fftSize=512, sampleRate≈44100 Hz (~86 Hz/bin).
+   */
+  public getAnalysis(): AudioAnalysis {
+    const data = this.getFrequencyData();
+    if (data.length === 0) {
+      return { bass: 0, mid: 0, treble: 0, highTone: 0, filterType: 'none' };
+    }
+
+    const avg = (from: number, to: number): number => {
+      let s = 0;
+      for (let i = from; i <= to; i++) s += data[i];
+      return s / ((to - from + 1) * 255);
+    };
+
+    const bass     = avg(0,  2);
+    const mid      = avg(3,  23);
+    const treble   = avg(24, 92);
+    const highTone = avg(93, 255);
+
+    let filterType: AudioAnalysis['filterType'] = 'none';
+    if (bass / (treble + 0.001) > 3.0 && bass > 0.08) {
+      filterType = 'lowpass';
+    } else if ((treble + highTone) / (bass + 0.001) > 3.0 && treble > 0.08) {
+      filterType = 'highpass';
+    }
+
+    return { bass, mid, treble, highTone, filterType };
   }
 
   public get engine(): AudioEngineV2 | null {

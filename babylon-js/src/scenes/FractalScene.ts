@@ -35,6 +35,13 @@ export class FractalScene extends Scene {
     this._fractalPost.loadEnvMap("assets/hall.hdr");
     this._fractalPost.attachToCamera(engine.scene.activeCamera!);
     this._initXRCallbacks(engine);
+    this._fractalPost.setThickness(0.1);
+    this._fractalPost.setScale(0.2);
+
+    this._frameObserver = engine.scene.onBeforeRenderObservable.add(() => {
+      const analysis = engine.audio.getAnalysis();
+      this._fractalPost?.setAudio(analysis);
+    });
 
     this._initKeyboardCallbacks();
     console.log("[FractalScene] Initialised.");

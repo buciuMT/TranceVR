@@ -1,7 +1,8 @@
 import { Camera, Effect, Matrix, PostProcess, Scene, Texture } from "@babylonjs/core";
 import fractalPostFragment from "../shaders/fractalPost.frag.glsl?raw";
+import type { AudioAnalysis } from "./AudioService";
 
-const UNIFORMS = ["uTime", "uSpikiness", "uThickness", "uScale", "uColor", "uWeirdness", "uEnvMapAvailable", "uCameraPos", "uInverseViewProj"] as const;
+const UNIFORMS = ["uTime", "uSpikiness", "uThickness", "uScale", "uColor", "uWeirdness", "uEnvMapAvailable", "uCameraPos", "uInverseViewProj", "uBass", "uTreble", "uHighTone", "uFilterType"] as const;
 const SAMPLERS = ["envSampler"] as const;
 
 export class FractalPostProcessService {
@@ -17,6 +18,11 @@ export class FractalPostProcessService {
   private _weirdness = 0.0;
   private _envTexture: Texture | null = null;
   private _envReady = false;
+
+  private _bass = 0;
+  private _treble = 0;
+  private _highTone = 0;
+  private _filterType = 0;
 
   constructor(scene: Scene) {
     this._scene = scene;
@@ -47,7 +53,7 @@ export class FractalPostProcessService {
     this._postProcess.onApply = (effect: Effect) => {
       // Use activeCamera so each stereo eye gets its own view matrix
       const cam = this._scene.activeCamera ?? this._camera!;
-
+      console.log(this._treble);
       effect.setFloat("uTime", this._time);
       effect.setFloat("uSpikiness", this._spikiness);
       effect.setFloat("uThickness", this._thickness);
@@ -59,6 +65,10 @@ export class FractalPostProcessService {
         effect.setTexture("envSampler", this._envTexture);
       }
       effect.setVector3("uCameraPos", cam.globalPosition);
+      effect.setFloat("uBass", this._bass);
+      effect.setFloat("uTreble", this._treble);
+      effect.setFloat("uHighTone", this._highTone);
+      effect.setFloat("uFilterType", this._filterType);
 
       const invVP = Matrix.Invert(
         cam.getViewMatrix().multiply(cam.getProjectionMatrix()),
@@ -91,6 +101,13 @@ export class FractalPostProcessService {
   public setScale(v: number): void { this._scale = v; }
   public setColor(r: number, g: number, b: number): void { this._color = { r, g, b }; }
   public setWeirdness(v: number): void { this._weirdness = v; }
+
+  public setAudio(a: AudioAnalysis): void {
+    this._bass = a.bass;
+    this._treble = a.treble;
+    this._highTone = a.highTone;
+    this._filterType = a.filterType === 'lowpass' ? 1 : a.filterType === 'highpass' ? -1 : 0;
+  }
 
   private _dispose(): void {
     if (this._postProcess) {

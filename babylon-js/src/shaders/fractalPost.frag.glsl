@@ -15,6 +15,11 @@ uniform float uWeirdness;
 uniform vec3 uCameraPos;
 uniform mat4 uInverseViewProj;
 
+uniform float uBass;
+uniform float uTreble;
+uniform float uHighTone;
+uniform float uFilterType;  // -1=highpass, 0=none, 1=lowpass
+
 #define Iterations 32
 #define PI 3.14159265359
 
@@ -91,8 +96,19 @@ vec3 sampleEnv(vec3 dir) {
 // =========================================================================
 
 void main(void) {
-    float thickness = mix(0.0, 0.3, uThickness);
-    float superQuadPower = mix(1.0, 20.0, uSpikiness);
+    // uTime oscillators for baseline animation (always moving)
+    float tSlow  = sin(uTime * 0.7);
+    float tMid   = sin(uTime * 1.3);
+    float tFast  = sin(uTime * 2.5);
+
+    // Audio + time modulated parameters
+    float thickness      = mix(0.0, 0.3, clamp(uThickness + uTreble * 0.4 ,  0.0, 1.0));
+    float superQuadPower = mix(1.0, 20.0, clamp(uSpikiness + uBass   * 0.7 , 0.0, 1.0));
+    float scale          = uScale * (1.0 + uBass * 2.0 );
+    // Filter-driven color temperature shift
+    vec3 colorMod = uColor;
+    colorMod = mix(colorMod, vec3(1.0, 0.55, 0.15), max(0.0,  uFilterType) * uBass   * 1.0);
+    colorMod = mix(colorMod, vec3(0.2,  0.55, 1.0),  max(0.0, -uFilterType) * uTreble * 1.0);
 
     // Reconstruct world-space ray from screen UV.
     vec2 ndc = vUV * 2.0 - 1.0;
@@ -109,7 +125,7 @@ void main(void) {
     bool hit = false;
     float i = float(Iterations);
     for (int j = 0; j < Iterations; j++) {
-        float dist = distfunc(rayPos * uScale, thickness, superQuadPower) / uScale;
+        float dist = distfunc(rayPos * scale, thickness, superQuadPower) / scale;
         rayPos += dist * rayDir;
         if (abs(dist) < 0.001) {
             i = float(j);
@@ -123,14 +139,15 @@ void main(void) {
         return;
     }
 
-    vec3 normal = normalize(gradient(rayPos * uScale, thickness, superQuadPower));
+    vec3 normal = normalize(gradient(rayPos * scale, thickness, superQuadPower));
 
     float ao    = 1.0 - i / float(Iterations);
     float rim   = pow(max(0.0, dot(normal, -rayDir)), 2.0);
     float light = ao * rim * 1.4;
 
-    vec3 col     = (cos(rayPos / 2.0) + 2.0) / 3.0;
-    col         *= uColor;
+    // Color cycles with time; bass accelerates the cycle
+    vec3 col = (cos(rayPos / 2.0 + uTime * 0.4 + uBass * 3.0) + 2.0) / 3.0;
+    col      *= colorMod;
     vec3 env     = sampleEnv(reflect(rayDir, normal));
 
     gl_FragColor = vec4(col * light + 0.1 * env, 1.0);
