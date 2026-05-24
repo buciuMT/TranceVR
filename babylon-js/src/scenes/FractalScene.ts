@@ -43,7 +43,7 @@ export class FractalScene extends Scene {
       this._fractalPost?.setAudio(analysis);
     });
 
-    this._initKeyboardCallbacks();
+    this._initKeyboardCallbacks(engine);
     console.log("[FractalScene] Initialised.");
   }
 
@@ -62,6 +62,7 @@ export class FractalScene extends Scene {
       this._ground.dispose();
       this._ground = null;
     }
+
     if (this._keydownHandler) {
       window.removeEventListener("keydown", this._keydownHandler);
       this._keydownHandler = null;
@@ -133,26 +134,37 @@ export class FractalScene extends Scene {
       if (flat) this._fractalPost?.attachToCamera(flat);
       console.log("[FractalScene] VR exited — PostProcess reattached to flat camera.");
     });
+
+    engine.xr.onControllerAdded((inputSource, motionController, handedness) => {
+      // Track cycle on 'select' (trigger)
+      inputSource.onSelectObservable.add(() => {
+        console.log(`[FractalScene] VR ${handedness} controller 'select' — cycling track`);
+        engine.audio.nextTrack();
+      });
+
+      if (handedness === "right") {
+        const aButton = motionController.getComponent("a-button");
+        if (aButton) {
+          aButton.onButtonStateChangedObservable.add((component: any) => {
+            if (component.pressed) {
+              console.log("[FractalScene] VR 'A' button pressed — cycling track");
+              engine.audio.nextTrack();
+            }
+          });
+        }
+      }
+    });
   }
 
   // =========================================================================
   // Keyboard
   // =========================================================================
 
-  private _initKeyboardCallbacks(): void {
+  private _initKeyboardCallbacks(engine: GameEngine): void {
     this._keydownHandler = (ev: KeyboardEvent) => {
-      const step = 0.05;
-      switch (ev.key) {
-        case "1": this._spikiness = Math.max(0, this._spikiness - step); this._fractalPost?.setSpikiness(this._spikiness); console.log(`Spikiness: ${this._spikiness.toFixed(2)}`); break;
-        case "2": this._spikiness = Math.min(1, this._spikiness + step); this._fractalPost?.setSpikiness(this._spikiness); console.log(`Spikiness: ${this._spikiness.toFixed(2)}`); break;
-        case "3": this._thickness = Math.max(0, this._thickness - step); this._fractalPost?.setThickness(this._thickness); console.log(`Thickness: ${this._thickness.toFixed(2)}`); break;
-        case "4": this._thickness = Math.min(1, this._thickness + step); this._fractalPost?.setThickness(this._thickness); console.log(`Thickness: ${this._thickness.toFixed(2)}`); break;
-        case "r": case "R":
-          this._spikiness = 0.5; this._thickness = 0.5;
-          this._fractalPost?.setSpikiness(0.5);
-          this._fractalPost?.setThickness(0.5);
-          console.log("Reset");
-          break;
+      if (ev.key === "k" || ev.key === "K") {
+        console.log("[FractalScene] Keyboard 'K' pressed — cycling track");
+        engine.audio.nextTrack();
       }
     };
     window.addEventListener("keydown", this._keydownHandler);

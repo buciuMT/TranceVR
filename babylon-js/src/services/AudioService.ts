@@ -1,24 +1,35 @@
 export interface AudioAnalysis {
-  bass:       number;  // 0-1, ~0-250 Hz
-  mid:        number;  // 0-1, ~250-2000 Hz
-  treble:     number;  // 0-1, ~2000-8000 Hz
-  highTone:   number;  // 0-1, ~8000+ Hz
-  kick:       number;  // 0-1, sub-bass ~0-170 Hz (kick drum)
-  snare:      number;  // 0-1, low-mid ~170-516 Hz (snare body)
-  filterType: 'lowpass' | 'highpass' | 'none';
+  bass: number; // 0-1, ~0-250 Hz
+  mid: number; // 0-1, ~250-2000 Hz
+  treble: number; // 0-1, ~2000-8000 Hz
+  highTone: number; // 0-1, ~8000+ Hz
+  kick: number; // 0-1, sub-bass ~0-170 Hz (kick drum)
+  snare: number; // 0-1, low-mid ~170-516 Hz (snare body)
+  filterType: "lowpass" | "highpass" | "none";
 }
 
 export class AudioService {
-  private _ctx:           AudioContext | null = null;
-  private _analyser:      AnalyserNode | null = null;
+  private _ctx: AudioContext | null = null;
+  private _analyser: AnalyserNode | null = null;
   private _frequencyData: Uint8Array<ArrayBuffer> | null = null;
-  private _audioElement:  HTMLAudioElement | null = null;
-  private _source:        MediaElementAudioSourceNode | null = null;
+  private _audioElement: HTMLAudioElement | null = null;
+  private _source: MediaElementAudioSourceNode | null = null;
+
+  private _tracks: string[] = [
+    "assets/track1.wav",
+    "assets/track2.mp3",
+    "assets/track3.mp3",
+    "assets/track4.wav",
+    "assets/track5.wav",
+    "assets/track6.wav",
+  ];
+  private _currentTrackIndex = 0;
 
   // Track to load once the AudioContext is created
-  private _pendingUrl: string | null = "assets/track1.wav";
+  private _pendingUrl: string | null = null;
 
   constructor() {
+    this._pendingUrl = this._tracks[this._currentTrackIndex];
     // AudioContext must be created inside a user gesture or it stays suspended.
     // Register for the first interaction and start then.
     const onGesture = () => {
@@ -28,8 +39,8 @@ export class AudioService {
         this._pendingUrl = null;
       }
     };
-    document.addEventListener('click',   onGesture, { once: true });
-    document.addEventListener('keydown', onGesture, { once: true });
+    document.addEventListener("click", onGesture, { once: true });
+    document.addEventListener("keydown", onGesture, { once: true });
   }
 
   private _ensureContext(): void {
@@ -40,7 +51,7 @@ export class AudioService {
     this._analyser.smoothingTimeConstant = 0.6;
     this._frequencyData = new Uint8Array(this._analyser.frequencyBinCount);
     this._analyser.connect(this._ctx.destination);
-    console.log('[AudioService] AudioContext created, state:', this._ctx.state);
+    console.log("[AudioService] AudioContext created, state:", this._ctx.state);
   }
 
   public async loadTrack(source: string | File): Promise<void> {
@@ -61,12 +72,23 @@ export class AudioService {
     this._source = this._ctx!.createMediaElementSource(this._audioElement);
     this._source.connect(this._analyser!);
 
-    this._audioElement.play().catch(e => console.error('[AudioService] play error:', e));
+    this._audioElement
+      .play()
+      .catch((e) => console.error("[AudioService] play error:", e));
     console.log(`[AudioService] Playing: ${url}`);
   }
 
+  public nextTrack(): void {
+    this._currentTrackIndex =
+      (this._currentTrackIndex + 1) % this._tracks.length;
+    const track = this._tracks[this._currentTrackIndex];
+    console.log(`[AudioService] Cycling to next track: ${track}`);
+    this.loadTrack(track);
+  }
+
   public getFrequencyData(): Uint8Array<ArrayBuffer> {
-    if (!this._analyser || !this._frequencyData) return new Uint8Array(0) as Uint8Array<ArrayBuffer>;
+    if (!this._analyser || !this._frequencyData)
+      return new Uint8Array(0) as Uint8Array<ArrayBuffer>;
     this._analyser.getByteFrequencyData(this._frequencyData);
     return this._frequencyData;
   }
@@ -85,7 +107,16 @@ export class AudioService {
   public getAnalysis(): AudioAnalysis {
     const data = this.getFrequencyData();
 
-    if (data.length === 0) return { bass: 0, mid: 0, treble: 0, highTone: 0, kick: 0, snare: 0, filterType: 'none' };
+    if (data.length === 0)
+      return {
+        bass: 0,
+        mid: 0,
+        treble: 0,
+        highTone: 0,
+        kick: 0,
+        snare: 0,
+        filterType: "none",
+      };
 
     const avg = (from: number, to: number): number => {
       let s = 0;
@@ -93,17 +124,18 @@ export class AudioService {
       return s / ((to - from + 1) * 255);
     };
 
-    const bass     = avg(0,  2);
-    const mid      = avg(3,  23);
-    const treble   = avg(24, 92);
+    const bass = avg(0, 2);
+    const mid = avg(3, 23);
+    const treble = avg(24, 92);
     const highTone = avg(93, 255);
     // Drums: fftSize=512 @ ~44100 Hz → bin width ≈ 86 Hz
-    const kick     = avg(0,  1);  // ~0-170 Hz  — kick fundamental
-    const snare    = avg(2,  5);  // ~170-516 Hz — snare body
+    const kick = avg(0, 1); // ~0-170 Hz  — kick fundamental
+    const snare = avg(2, 5); // ~170-516 Hz — snare body
 
-    let filterType: AudioAnalysis['filterType'] = 'none';
-    if (bass / (treble + 0.001) > 3.0 && bass > 0.08)                     filterType = 'lowpass';
-    else if ((treble + highTone) / (bass + 0.001) > 3.0 && treble > 0.08) filterType = 'highpass';
+    let filterType: AudioAnalysis["filterType"] = "none";
+    if (bass / (treble + 0.001) > 3.0 && bass > 0.08) filterType = "lowpass";
+    else if ((treble + highTone) / (bass + 0.001) > 3.0 && treble > 0.08)
+      filterType = "highpass";
 
     return { bass, mid, treble, highTone, kick, snare, filterType };
   }

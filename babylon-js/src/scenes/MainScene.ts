@@ -117,6 +117,10 @@ export class MainScene extends Scene {
     this._keydownHandler = (ev: KeyboardEvent) => {
       // Audio track selection (identical to old Engine._initAudioControls)
       switch (ev.key) {
+        case "k":
+        case "K":
+          engine.audio.nextTrack();
+          break;
         case "1":
           engine.audio.loadTrack("assets/track1.wav");
           break;
@@ -223,8 +227,25 @@ export class MainScene extends Scene {
     });
 
     // Flashlight on right controller
-    engine.xr.onControllerAdded((_mc, handedness, gripNode) => {
+    engine.xr.onControllerAdded((inputSource, motionController, handedness, gripNode) => {
+      // Track cycle on 'select' (trigger)
+      inputSource.onSelectObservable.add(() => {
+        console.log(`[MainScene] VR ${handedness} controller 'select' — cycling track`);
+        engine.audio.nextTrack();
+      });
+
       if (handedness === "right") {
+        // Track cycle on 'A' button
+        const aButton = motionController.getComponent("a-button");
+        if (aButton) {
+          aButton.onButtonStateChangedObservable.add((component: any) => {
+            if (component.pressed) {
+              console.log("[MainScene] VR 'A' button pressed — cycling track");
+              engine.audio.nextTrack();
+            }
+          });
+        }
+
         const players = engine.world.queryComponents(Player, Light);
         for (const { components } of players) {
           const [, light] = components;
