@@ -65,6 +65,9 @@ export class GameEngine {
   private _postProcess: PostProcessService;
   private _environment: Environment;
 
+  // Teleportation (default enabled, FractalScene disables for smooth locomotion only)
+  private _teleportationEnabled = true;
+
   // Post‑process state (shared between Engine and Scene callbacks)
   private _postProcessAttached = false;
 
@@ -273,6 +276,13 @@ export class GameEngine {
   get scene(): Scene              { return this._scene; }
   get canvas(): HTMLCanvasElement { return this._canvas; }
   get environment(): Environment  { return this._environment; }
+  /** Enable/disable XR teleportation. Default is true. */
+  get teleportationEnabled(): boolean { return this._teleportationEnabled; }
+  set teleportationEnabled(val: boolean) {
+    this._teleportationEnabled = val;
+    this._xr.setTeleportationEnabled(val);
+  }
+
   get babylonEngine(): Engine     { return this._engine; }
 
   // =========================================================================
@@ -349,9 +359,9 @@ export class GameEngine {
     this._engine.runRenderLoop(() => {
       const dt = this._engine.getDeltaTime() / 1000;
 
-      // Run all ECS systems in order
+      // Run all ECS systems in order (skip disabled)
       for (const system of this._systems) {
-        system.update(dt);
+        if (system.enabled) system.update(dt);
       }
 
       // Consume one-shot "just pressed" events

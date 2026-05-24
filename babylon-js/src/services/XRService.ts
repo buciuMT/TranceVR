@@ -1,4 +1,4 @@
-import { Scene, Camera, WebXRDefaultExperience } from "@babylonjs/core";
+import { Scene, Camera, WebXRDefaultExperience, AbstractMesh } from "@babylonjs/core";
 
 type XRState = "flat" | "vr";
 
@@ -18,6 +18,7 @@ export class XRService {
 
   private _enterCallbacks: EnterCallback[] = [];
   private _exitCallbacks: ExitCallback[] = [];
+  private _pendingFloorMeshes: AbstractMesh[] = [];
 
   constructor(scene: Scene) {
     this._scene = scene;
@@ -42,7 +43,7 @@ export class XRService {
           {
             xrInput: this._xr.input,
             movementOrientationFollowsViewerPose: true,
-            movementOrientationFollowsController: true,
+            rotationEnabled: false,  // rotation handled by the teleportation module
           },
         );
       } catch (e) {
@@ -65,6 +66,11 @@ export class XRService {
           }
         }
       });
+
+      for (const mesh of this._pendingFloorMeshes) {
+        this._xr.teleportation?.addFloorMesh(mesh);
+      }
+      this._pendingFloorMeshes = [];
 
       console.log("[XRService] WebXR initialized.");
     } catch (e) {
@@ -141,5 +147,43 @@ export class XRService {
   /** XR input (controllers). */
   get input() {
     return this._xr?.input ?? null;
+  }
+
+  // =========================================================================
+  // Floor mesh registration
+  // =========================================================================
+
+  /** Register a mesh as a teleportation target. Safe to call before XR is initialized. */
+  public registerFloorMesh(mesh: AbstractMesh): void {
+    if (this._xr?.teleportation) {
+      this._xr.teleportation.addFloorMesh(mesh);
+    } else {
+      this._pendingFloorMeshes.push(mesh);
+    }
+  }
+
+  /** Unregister a mesh as a teleportation target. */
+  public unregisterFloorMesh(mesh: AbstractMesh): void {
+    this._pendingFloorMeshes = this._pendingFloorMeshes.filter((m) => m !== mesh);
+    this._xr?.teleportation?.removeFloorMesh(mesh);
+  }
+
+  // =========================================================================
+  // Teleportation toggle
+  // =========================================================================
+
+  /**
+   * Enable or disable the teleportation module.
+   * When disabled, only smooth locomotion (xr-controller-movement) is active.
+   * Call after init().
+   */
+  public setTeleportationEnabled(enabled: boolean): void {
+    if (!this._xr?.teleportation) return;
+    if (!enabled) {
+      this._xr.teleportation.detach();
+      console.log("[XRService] Teleportation disabled — smooth locomotion only.");
+    }
+    // Re-enabling after detach is not straightforward;
+    // scenes that need teleportation keep it enabled by default.
   }
 }
