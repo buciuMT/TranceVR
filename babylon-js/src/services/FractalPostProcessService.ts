@@ -1,7 +1,8 @@
-import { Camera, Effect, Matrix, PostProcess, Scene } from "@babylonjs/core";
+import { Camera, Effect, Matrix, PostProcess, Scene, Texture } from "@babylonjs/core";
 import fractalPostFragment from "../shaders/fractalPost.frag.glsl?raw";
 
-const UNIFORMS = ["uTime", "uSpikiness", "uThickness", "uCameraPos", "uInverseViewProj"] as const;
+const UNIFORMS = ["uTime", "uSpikiness", "uThickness", "uScale", "uColor", "uWeirdness", "uEnvMapAvailable", "uCameraPos", "uInverseViewProj"] as const;
+const SAMPLERS = ["envSampler"] as const;
 
 export class FractalPostProcessService {
   private _scene: Scene;
@@ -11,6 +12,11 @@ export class FractalPostProcessService {
   private _time = 0;
   private _spikiness = 0.5;
   private _thickness = 0.5;
+  private _scale = 1.0;
+  private _color = { r: 1, g: 1, b: 1 };
+  private _weirdness = 0.0;
+  private _envTexture: Texture | null = null;
+  private _envReady = false;
 
   constructor(scene: Scene) {
     this._scene = scene;
@@ -33,7 +39,7 @@ export class FractalPostProcessService {
       "fractalPost",
       "fractalPost",
       [...UNIFORMS],
-      null,
+      [...SAMPLERS],
       1.0,
       camera,
     );
@@ -45,6 +51,13 @@ export class FractalPostProcessService {
       effect.setFloat("uTime", this._time);
       effect.setFloat("uSpikiness", this._spikiness);
       effect.setFloat("uThickness", this._thickness);
+      effect.setFloat("uScale", this._scale);
+      effect.setFloat3("uColor", this._color.r, this._color.g, this._color.b);
+      effect.setFloat("uWeirdness", this._weirdness);
+      effect.setFloat("uEnvMapAvailable", this._envReady ? 1 : 0);
+      if (this._envReady && this._envTexture) {
+        effect.setTexture("envSampler", this._envTexture);
+      }
       effect.setVector3("uCameraPos", cam.globalPosition);
 
       const invVP = Matrix.Invert(
@@ -56,13 +69,28 @@ export class FractalPostProcessService {
     console.log(`[FractalPostProcessService] Attached to camera: ${camera.name}`);
   }
 
+  public loadEnvMap(url: string): void {
+    this._envReady = false;
+    if (this._envTexture) { this._envTexture.dispose(); }
+    this._envTexture = new Texture(url, this._scene);
+    this._envTexture.onLoadObservable.addOnce(() => {
+      this._envReady = true;
+      console.log("[FractalPostProcessService] Env map loaded.");
+    });
+  }
+
   public detach(): void {
     this._dispose();
+    if (this._envTexture) { this._envTexture.dispose(); this._envTexture = null; }
+    this._envReady = false;
     this._camera = null;
   }
 
   public setSpikiness(v: number): void { this._spikiness = Math.max(0, Math.min(1, v)); }
   public setThickness(v: number): void { this._thickness = Math.max(0, Math.min(1, v)); }
+  public setScale(v: number): void { this._scale = v; }
+  public setColor(r: number, g: number, b: number): void { this._color = { r, g, b }; }
+  public setWeirdness(v: number): void { this._weirdness = v; }
 
   private _dispose(): void {
     if (this._postProcess) {

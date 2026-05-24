@@ -2,10 +2,15 @@ precision highp float;
 
 varying vec2 vUV;
 uniform sampler2D textureSampler;
+uniform sampler2D envSampler;
+uniform float     uEnvMapAvailable;
 
 uniform float uTime;
 uniform float uSpikiness;
 uniform float uThickness;
+uniform float uScale;
+uniform vec3  uColor;
+uniform float uWeirdness;
 
 uniform vec3 uCameraPos;
 uniform mat4 uInverseViewProj;
@@ -70,6 +75,17 @@ vec3 proceduralEnv(vec3 dir) {
     return mix(vec3(0.02, 0.02, 0.06), vec3(0.1, 0.05, 0.2), t);
 }
 
+vec2 envMapUV(vec3 dir) {
+    float u = atan(dir.z, dir.x) / (2.0 * PI) + 0.5;
+    float v = asin(clamp(dir.y, -1.0, 1.0)) / PI + 0.5;
+    return vec2(u, v);
+}
+
+vec3 sampleEnv(vec3 dir) {
+    if (uEnvMapAvailable < 0.5) return proceduralEnv(dir);
+    return texture2D(envSampler, envMapUV(dir)).rgb;
+}
+
 // =========================================================================
 // Main
 // =========================================================================
@@ -93,7 +109,7 @@ void main(void) {
     bool hit = false;
     float i = float(Iterations);
     for (int j = 0; j < Iterations; j++) {
-        float dist = distfunc(rayPos, thickness, superQuadPower);
+        float dist = distfunc(rayPos * uScale, thickness, superQuadPower) / uScale;
         rayPos += dist * rayDir;
         if (abs(dist) < 0.001) {
             i = float(j);
@@ -107,14 +123,15 @@ void main(void) {
         return;
     }
 
-    vec3 normal = normalize(gradient(rayPos, thickness, superQuadPower));
+    vec3 normal = normalize(gradient(rayPos * uScale, thickness, superQuadPower));
 
     float ao    = 1.0 - i / float(Iterations);
     float rim   = pow(max(0.0, dot(normal, -rayDir)), 2.0);
     float light = ao * rim * 1.4;
 
     vec3 col     = (cos(rayPos / 2.0) + 2.0) / 3.0;
-    vec3 env     = proceduralEnv(reflect(rayDir, normal));
+    col         *= uColor;
+    vec3 env     = sampleEnv(reflect(rayDir, normal));
 
     gl_FragColor = vec4(col * light + 0.1 * env, 1.0);
 }

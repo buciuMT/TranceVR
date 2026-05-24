@@ -32,6 +32,7 @@ export class FractalScene extends Scene {
     engine.createPlayer({ pos: new Vector3(0, 3, 0) });
 
     this._fractalPost = new FractalPostProcessService(engine.scene);
+    this._fractalPost.loadEnvMap("assets/hall.hdr");
     this._fractalPost.attachToCamera(engine.scene.activeCamera!);
     this._initXRCallbacks(engine);
 
