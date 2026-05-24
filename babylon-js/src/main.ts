@@ -1,5 +1,6 @@
 import "./style.css";
 import { GameEngine } from "./core/Engine";
+import { MainScene } from "./scenes/MainScene";
 import "@babylonjs/inspector";
 
 class App {
@@ -8,7 +9,8 @@ class App {
   }
 
   private async _init() {
-    await GameEngine.Create("renderCanvas");
+    const engine = await GameEngine.Create("renderCanvas");
+    await engine.loadScene(new MainScene());
     this._hideLoadingScreen();
     console.log("TranceVR: Engine-driven ECS initialised.");
   }
