@@ -2,7 +2,7 @@ import { Camera, Effect, Matrix, PostProcess, Scene, Texture } from "@babylonjs/
 import fractalPostFragment from "../shaders/fractalPost.frag.glsl?raw";
 import type { AudioAnalysis } from "./AudioService";
 
-const UNIFORMS = ["uTime", "uSpikiness", "uThickness", "uScale", "uColor", "uWeirdness", "uEnvMapAvailable", "uCameraPos", "uInverseViewProj", "uBass", "uTreble", "uHighTone", "uFilterType"] as const;
+const UNIFORMS = ["uTime", "uSpikiness", "uThickness", "uScale", "uColor", "uWeirdness", "uEnvMapAvailable", "uCameraPos", "uInverseViewProj", "uBass", "uTreble", "uHighTone", "uFilterType", "uKick", "uSnare"] as const;
 const SAMPLERS = ["envSampler"] as const;
 
 export class FractalPostProcessService {
@@ -23,6 +23,8 @@ export class FractalPostProcessService {
   private _treble = 0;
   private _highTone = 0;
   private _filterType = 0;
+  private _kick = 0;
+  private _snare = 0;
 
   constructor(scene: Scene) {
     this._scene = scene;
@@ -69,6 +71,8 @@ export class FractalPostProcessService {
       effect.setFloat("uTreble", this._treble);
       effect.setFloat("uHighTone", this._highTone);
       effect.setFloat("uFilterType", this._filterType);
+      effect.setFloat("uKick", this._kick);
+      effect.setFloat("uSnare", this._snare);
 
       const invVP = Matrix.Invert(
         cam.getViewMatrix().multiply(cam.getProjectionMatrix()),
@@ -107,6 +111,8 @@ export class FractalPostProcessService {
     this._treble = a.treble;
     this._highTone = a.highTone;
     this._filterType = a.filterType === 'lowpass' ? 1 : a.filterType === 'highpass' ? -1 : 0;
+    this._kick = a.kick;
+    this._snare = a.snare;
   }
 
   private _dispose(): void {

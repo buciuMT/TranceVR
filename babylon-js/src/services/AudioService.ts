@@ -3,6 +3,8 @@ export interface AudioAnalysis {
   mid:        number;  // 0-1, ~250-2000 Hz
   treble:     number;  // 0-1, ~2000-8000 Hz
   highTone:   number;  // 0-1, ~8000+ Hz
+  kick:       number;  // 0-1, sub-bass ~0-170 Hz (kick drum)
+  snare:      number;  // 0-1, low-mid ~170-516 Hz (snare body)
   filterType: 'lowpass' | 'highpass' | 'none';
 }
 
@@ -35,7 +37,7 @@ export class AudioService {
     this._ctx = new AudioContext();
     this._analyser = this._ctx.createAnalyser();
     this._analyser.fftSize = 512;
-    this._analyser.smoothingTimeConstant = 0.85;
+    this._analyser.smoothingTimeConstant = 0.6;
     this._frequencyData = new Uint8Array(this._analyser.frequencyBinCount);
     this._analyser.connect(this._ctx.destination);
     console.log('[AudioService] AudioContext created, state:', this._ctx.state);
@@ -83,7 +85,7 @@ export class AudioService {
   public getAnalysis(): AudioAnalysis {
     const data = this.getFrequencyData();
 
-    if (data.length === 0) return { bass: 0, mid: 0, treble: 0, highTone: 0, filterType: 'none' };
+    if (data.length === 0) return { bass: 0, mid: 0, treble: 0, highTone: 0, kick: 0, snare: 0, filterType: 'none' };
 
     const avg = (from: number, to: number): number => {
       let s = 0;
@@ -95,11 +97,14 @@ export class AudioService {
     const mid      = avg(3,  23);
     const treble   = avg(24, 92);
     const highTone = avg(93, 255);
+    // Drums: fftSize=512 @ ~44100 Hz → bin width ≈ 86 Hz
+    const kick     = avg(0,  1);  // ~0-170 Hz  — kick fundamental
+    const snare    = avg(2,  5);  // ~170-516 Hz — snare body
 
     let filterType: AudioAnalysis['filterType'] = 'none';
     if (bass / (treble + 0.001) > 3.0 && bass > 0.08)                     filterType = 'lowpass';
     else if ((treble + highTone) / (bass + 0.001) > 3.0 && treble > 0.08) filterType = 'highpass';
 
-    return { bass, mid, treble, highTone, filterType };
+    return { bass, mid, treble, highTone, kick, snare, filterType };
   }
 }

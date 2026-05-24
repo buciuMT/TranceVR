@@ -103,8 +103,8 @@ void main(void) {
 
     // Audio + time modulated parameters
     float thickness      = mix(0.0, 0.3, clamp(uThickness + uTreble * 0.4 ,  0.0, 1.0));
-    float superQuadPower = mix(1.0, 20.0, clamp(uSpikiness + uBass   * 0.7 , 0.0, 1.0));
-    float scale          = uScale * (1.0 + uBass * 2.0 );
+    float superQuadPower = mix(1.0, 20.0, clamp(uSpikiness + uBass*uBass  * 0.7 , 0.0, 1.0));
+    float scale          = uScale ;
     // Filter-driven color temperature shift
     vec3 colorMod = uColor;
     colorMod = mix(colorMod, vec3(1.0, 0.55, 0.15), max(0.0,  uFilterType) * uBass   * 1.0);
@@ -146,7 +146,7 @@ void main(void) {
     float light = ao * rim * 1.4;
 
     // Color cycles with time; bass accelerates the cycle
-    vec3 col = (cos(rayPos / 2.0 + uTime * 0.4 + uBass * 3.0) + 2.0) / 3.0;
+    vec3 col = (cos(rayPos / 2.0 + uBass * 3.0) + 2.0) / 3.0;
     col      *= colorMod;
     vec3 env     = sampleEnv(reflect(rayDir, normal));
 
