@@ -1,115 +1,108 @@
-import {
-  Scene,
-  Vector3,
-  HemisphericLight,
-  Color3,
-  Color4,
-  WebXRDefaultExperience,
-} from "@babylonjs/core";
-import "@babylonjs/loaders/glTF";
-import { Environment } from "../entities/Environment";
-import { Player } from "../entities/Player";
-import { LevelManager } from "../entities/LevelManager";
-import { AudioService } from "../services/AudioService";
+import { Vector3 } from "@babylonjs/core";
+import { Scene } from "./Scene";
+import { GameEngine } from "../core/Engine";
+import { Tags, PostProcessPipeline, VertexGlitchEffect, Camera, Player, Transform, Corridor, Light } from "../ecs/components";
+import { LevelStreamingSystem } from "../ecs/systems";
+import type { EffectName } from "../services/PostProcessService";
 
-export class MainScene {
-  private _scene: Scene;
-  private _canvas: HTMLCanvasElement;
-  private _environment: Environment;
-  private _levelManager: LevelManager;
-  private _player!: Player;
-  private _audioService: AudioService;
-  private _xr!: WebXRDefaultExperience;
+const SEGMENT_LENGTH = 16;
+const RENDER_DISTANCE = 3;
+const MODULE_TYPES = ["coridor0", "coridor1", "coridor2", "coridor3"];
 
-  constructor(scene: Scene, canvas: HTMLCanvasElement) {
-    this._scene = scene;
-    this._canvas = canvas;
-    this._environment = new Environment(this._scene);
-    this._levelManager = new LevelManager(this._environment);
-    this._audioService = new AudioService();
+/**
+ * The main game scene — first‑person dungeon crawl with audio‑reactive post‑processing.
+ *
+ * Owns: which entities to spawn, keyboard shortcuts, XR callbacks, audio loading.
+ * The Engine owns infrastructure (Babylon, ECS world, services, systems, render loop).
+ */
+export class MainScene extends Scene {
+  private _keydownHandler: ((ev: KeyboardEvent) => void) | null = null;
+  private _sceneTag = "main_scene";
 
-    this._initScene();
-    this._initAudioControls();
-    this._initXR();
+  // =========================================================================
+  // Lifecycle
+  // =========================================================================
+
+  async init(engine: GameEngine): Promise<void> {
+    // 1. Load initial corridor segments BEFORE spawning player
+    //    (prevents player from falling through empty space)
+    await this._loadInitialSegments(engine);
+
+    // 2. Spawn player — always starts flat; VR transition via XR button
+    engine.createPlayer({ pos: new Vector3(0, 3, 0) });
+
+    // 3. Wire keyboard callbacks
+    this._initKeyboardCallbacks(engine);
+
+    // 4. Wire XR callbacks (VR enter/exit, controller attachment)
+    this._initXRCallbacks(engine);
+
+    // 5. Auto-load default audio track
+    engine.audio.loadTrack("assets/track1.wav");
+
+    console.log("[MainScene] Initialised.");
   }
 
-  private async _initXR(): Promise<void> {
-    try {
-      this._xr = await this._scene.createDefaultXRExperienceAsync({
-        floorMeshes: [], // Inițial gol
-      });
-
-      // Configurăm Mișcarea Smooth (Joystick)
-      try {
-        this._xr.baseExperience.featuresManager.enableFeature(
-          "xr-controller-movement",
-          "latest",
-          {
-            xrInput: this._xr.input,
-            movementOrientationFollowsViewerPose: true,
-            movementOrientationFollowsController: true,
-          },
-        );
-      } catch (e) {
-        console.warn("[XR] Mișcarea prin controller nu a putut fi activată:", e);
-      }
-
-      // Sincronizare poziție XR cu Player Capsule
-      this._xr.baseExperience.onStateChangedObservable.add((state) => {
-        if (state === 2) { // Entering VR
-          console.log("[XR] Intrat în modul VR");
-          
-          // Calculăm poziția "picioarelor" player-ului (capsula are înălțime 1.8, deci centrul e la +0.9 față de bază)
-          const footPosition = this._player.position.clone();
-          footPosition.y -= 0.9; 
-
-          // În WebXR cu local-floor, camera.position reprezintă capul.
-          // Pentru a pune jucătorul unde este capsula, trebuie să mutăm rig-ul (sau să folosim setTransformationFromCamera)
-          // O variantă simplă este să setăm poziția camerei pe XZ, dar să lăsăm Y-ul să fie gestionat de înălțimea reală + offset-ul podelei.
-          // Babylon XR gestionează Y-ul automat dacă nu îl forțăm.
-          
-          this._xr.baseExperience.camera.position.set(footPosition.x, this._xr.baseExperience.camera.position.y, footPosition.z);
-        } else if (state === 0) { // Exiting VR
-          console.log("[XR] Ieșit din modul VR");
-          this._player.attachFlashlightTo(null);
-        }
-      });
-
-      // Atașare lanternă de controllerul din mâna dreaptă
-      this._xr.input.onControllerAddedObservable.add((controller) => {
-        controller.onMotionControllerInitObservable.add((motionController) => {
-          if (motionController.handness === "right") {
-            console.log("[XR] Atașez lanterna de controllerul drept");
-            this._player.attachFlashlightTo(controller.grip || controller.pointer);
-          }
-        });
-      });
-
-      // Loop de actualizare pentru podele și sincronizare fizică
-      this._scene.onBeforeRenderObservable.add(() => {
-        if (this._xr && this._xr.baseExperience.state === 2) {
-          // 1. Actualizăm floorMeshes pentru teleportare
-          const floors = this._levelManager.getFloorMeshes();
-          if (this._xr.teleportation) {
-            floors.forEach(f => {
-              this._xr.teleportation.addFloorMesh(f);
-            });
-          }
-
-          // 2. Sincronizăm Capsula de Fizică cu Camera VR (pentru coliziuni)
-          const cameraPos = this._xr.baseExperience.camera.position;
-          this._player.setPosition(new Vector3(cameraPos.x, this._player.position.y, cameraPos.z));
-        }
-      });
-
-      console.log("[XR] Sistem WebXR inițializat.");
-    } catch (e) {
-      console.warn("[XR] WebXR nu este suportat sau a apărut o eroare:", e);
+  unload(engine: GameEngine): void {
+    // 1. Remove keyboard listener
+    if (this._keydownHandler) {
+      window.removeEventListener("keydown", this._keydownHandler);
+      this._keydownHandler = null;
     }
+
+    // 2. Destroy all entities tagged with this scene's tag
+    const allTagged = engine.world.queryComponents(Tags);
+    for (const { entity, components } of allTagged) {
+      const [tags] = components;
+      if (tags.has(this._sceneTag)) {
+        engine.world.destroyEntity(entity);
+      }
+    }
+
+    // 3. Dispose any remaining corridor meshes (belt-and-suspenders)
+    const corridors = engine.world.queryComponents(Corridor);
+    for (const { entity, components: [corridor] } of corridors) {
+      for (const mesh of corridor.meshes) {
+        mesh.dispose();
+      }
+      engine.world.destroyEntity(entity);
+    }
+
+    console.log("[MainScene] Unloaded.");
   }
 
-  private _initAudioControls(): void {
-    // Hidden file input for loading local tracks
+  // =========================================================================
+  // Corridor pre‑load (identical to old Engine._loadInitialSegment)
+  // =========================================================================
+
+  private async _loadInitialSegments(engine: GameEngine): Promise<void> {
+    const start = -RENDER_DISTANCE;
+    const end = RENDER_DISTANCE;
+    const promises: Promise<void>[] = [];
+
+    for (let i = start; i <= end; i++) {
+      const type = MODULE_TYPES[Math.abs(i) % MODULE_TYPES.length];
+      const offset = i * SEGMENT_LENGTH;
+
+      promises.push(
+        engine.environment.loadLevel(type, new Vector3(0, 0, offset)).then((meshes) => {
+          const entity = engine.world.createEntity();
+          engine.world.add(new Corridor({ entity, segmentIndex: i, meshes }));
+          engine.world.add(new Tags({ entity, values: [this._sceneTag, "corridor"] }));
+        }),
+      );
+    }
+
+    await Promise.allSettled(promises);
+    console.log("[MainScene] Initial corridor segments loaded.");
+  }
+
+  // =========================================================================
+  // Keyboard callbacks (identical to old Engine._initAudioControls + _initEffectShortcuts)
+  // =========================================================================
+
+  private _initKeyboardCallbacks(engine: GameEngine): void {
+    // Audio file picker (identical to old Engine._initAudioControls)
     const fileInput = document.createElement("input");
     fileInput.type = "file";
     fileInput.accept = "audio/*";
@@ -118,80 +111,152 @@ export class MainScene {
 
     fileInput.onchange = (e: any) => {
       const file = e.target.files[0];
-      if (file) {
-        this._audioService.loadTrack(file);
-      }
+      if (file) engine.audio.loadTrack(file);
     };
 
-    window.addEventListener("keydown", (ev) => {
+    this._keydownHandler = (ev: KeyboardEvent) => {
+      // Audio track selection (identical to old Engine._initAudioControls)
       switch (ev.key) {
         case "1":
-          this._audioService.loadTrack("assets/track1.wav");
+          engine.audio.loadTrack("assets/track1.wav");
           break;
         case "2":
-          // Placeholder URLs for other tracks
           console.log("Track 2 requested (placeholder)");
-          this._audioService.loadTrack("assets/track2.wav");
+          engine.audio.loadTrack("assets/track2.wav");
           break;
         case "3":
           console.log("Track 3 requested (placeholder)");
-          // this._audioService.loadTrack("assets/track3.wav");
           break;
         case "o":
         case "O":
           fileInput.click();
           break;
       }
-    });
 
-    // Auto-play default track (might require user interaction first in some browsers)
-    // We'll try to load it, but browsers usually block autoplay without interaction.
-    // The loading screen interaction or a key press will likely trigger it.
-    this._audioService.loadTrack("assets/track1.wav");
-  }
+      // Blur toggle ('a' key — no Ctrl needed) (identical to old _initEffectShortcuts)
+      if (ev.key === "a" || ev.key === "A") {
+        engine.ensurePostProcessAttached();
+        engine.postProcess.toggleBlur();
+        return;
+      }
 
-  private _initScene(): void {
-    // Fog Configuration
-    this._scene.fogMode = Scene.FOGMODE_LINEAR;
-    this._scene.fogColor = new Color3(0.06, 0.06, 0.06);
-    this._scene.clearColor = new Color4(0.06, 0.06, 0.06, 1.0);
-    this._scene.fogStart = 20.0;
-    this._scene.fogEnd = 60.0;
-
-    // 1. Player & Cameră (First Person cu Fizică)
-    this._player = new Player(this._scene, this._canvas);
-
-    // 2. Lumină Ambientală (foarte slabă pentru a permite lanternei să domine)
-    const light = new HemisphericLight(
-      "light",
-      new Vector3(0, 1, 0),
-      this._scene,
-    );
-    light.intensity = 0.15;
-
-    // 3. Procedural Update Loop
-    this._scene.onBeforeRenderObservable.add(() => {
-      this._levelManager.update(this._player.position);
-    });
-
-    // 4. Start Position
-    setTimeout(() => {
-      this._player.setPosition(new Vector3(0, 3, 0));
-    }, 2000); // Delay mic pentru a asigura că totul este inițializat
-
-    // 5. Debug Inspector
-    this._initInspector();
-  }
-
-  private _initInspector(): void {
-    window.addEventListener("keydown", (ev) => {
-      // Shift + I pentru a deschide Inspectorul
-      if (ev.shiftKey && ev.keyCode === 73) {
-        if (this._scene.debugLayer.isVisible()) {
-          this._scene.debugLayer.hide();
-        } else {
-          this._scene.debugLayer.show();
+      // Vertex glitch toggle (Ctrl+6) (identical to old _initEffectShortcuts)
+      if (ev.ctrlKey && ev.key === "6") {
+        const effects = engine.world.queryComponents(VertexGlitchEffect);
+        for (const { components: [fx] } of effects) {
+          fx.enabled = !fx.enabled;
+          console.log(`[MainScene] VertexGlitch: ${fx.enabled ? "ON" : "OFF"}`);
         }
+        return;
+      }
+
+      if (!ev.ctrlKey) return;
+
+      // Lazy‑attach PostProcess on first use (identical to old _initEffectShortcuts)
+      engine.ensurePostProcessAttached();
+
+      const names = engine.postProcess.effectNames as unknown as string[];
+      const digit = parseInt(ev.key);
+      const idx = digit - 1;
+
+      if (digit === 0) {
+        // Ctrl+0 → disable all
+        engine.postProcess.disableAll();
+        console.log("[MainScene] All effects disabled");
+
+        // Reset pipeline component
+        const pipes = engine.world.queryComponents(PostProcessPipeline);
+        for (const { components: [pipe] } of pipes) {
+          pipe.tranceIntensity = 0;
+          pipe.chromaticIntensity = 0;
+          pipe.pulseIntensity = 0;
+          pipe.kaleidoscopeIntensity = 0;
+          pipe.invertIntensity = 0;
+        }
+      } else if (idx >= 0 && idx < names.length) {
+        // Ctrl+1..5 → toggle effect
+        const name = names[idx] as EffectName;
+        const current = engine.postProcess.getIntensity(name);
+        const next = current > 0 ? 0 : 0.7;
+        engine.postProcess.setIntensity(name, next);
+        console.log(`[MainScene] ${name}: ${current > 0 ? "OFF" : "ON (0.7)"}`);
+
+        // Sync pipeline component
+        const pipes = engine.world.queryComponents(PostProcessPipeline);
+        for (const { components: [pipe] } of pipes) {
+          const key = `${name}Intensity` as keyof typeof pipe;
+          if (key in pipe) (pipe as any)[key] = next;
+        }
+      }
+    };
+
+    window.addEventListener("keydown", this._keydownHandler);
+  }
+
+  // =========================================================================
+  // XR callbacks (identical to old Engine._initXR)
+  // =========================================================================
+
+  private _initXRCallbacks(engine: GameEngine): void {
+    engine.xr.onEnter((xrCamera) => {
+      if (engine.postProcessAttached) {
+        engine.postProcess.attachToCamera(xrCamera);
+      }
+
+      // Sync player position to XR camera on entry
+      const players = engine.world.queryComponents(Player, Transform);
+      for (const { components } of players) {
+        const [, transform] = components;
+        const footPos = transform.position.clone();
+        footPos.y -= 0.9;
+        xrCamera.position.set(footPos.x, xrCamera.position.y, footPos.z);
+      }
+    });
+
+    engine.xr.onExit(() => {
+      if (!engine.postProcessAttached) return;
+      // Switch post-process back to player camera
+      const players = engine.world.queryComponents(Player, Camera);
+      if (players.length > 0) {
+        engine.postProcess.attachToCamera(players[0].components[1].camera);
+      }
+    });
+
+    // Flashlight on right controller
+    engine.xr.onControllerAdded((_mc, handedness, gripNode) => {
+      if (handedness === "right") {
+        const players = engine.world.queryComponents(Player, Light);
+        for (const { components } of players) {
+          const [, light] = components;
+          if (gripNode) {
+            light.light.parent = gripNode;
+            light.light.position = Vector3.Zero();
+            light.light.direction = new Vector3(0, 0, 1);
+          } else {
+            // Reset to camera
+            const cameras = engine.world.queryComponents(Player, Camera);
+            for (const { components: camComps } of cameras) {
+              const [, cam] = camComps;
+              light.light.parent = cam.camera;
+              light.light.position = Vector3.Zero();
+              light.light.direction = new Vector3(0, 0, 1);
+            }
+          }
+        }
+      }
+    });
+
+    // Per-frame: register floor meshes for VR teleportation
+    const levelSystem = engine.getSystem(LevelStreamingSystem);
+
+    engine.scene.onBeforeRenderObservable.add(() => {
+      if (!engine.xr.isVR) return;
+      const tp = engine.xr.teleportation;
+      if (!tp || !levelSystem) return;
+
+      const floors = levelSystem.getFloorMeshes();
+      for (const f of floors) {
+        tp.addFloorMesh(f);
       }
     });
   }
